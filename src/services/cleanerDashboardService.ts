@@ -50,13 +50,33 @@ export const getAssignedWashes = async (): Promise<WashAssignment[]> => {
   }
 };
 
+
+export interface Page<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number; // current page
+}
+
 /**
- * Fetches wash history for the current cleaner
+ * Fetches wash history for the current cleaner with filters and pagination
  */
-export const getWashHistory = async (): Promise<WashAssignment[]> => {
+export const getWashHistory = async (
+  startDate?: string, 
+  endDate?: string, 
+  status?: string, 
+  page: number = 0, 
+  size: number = 10
+): Promise<Page<WashAssignment>> => {
   try {
-    const response = await apiClient.get<ApiWrapper<WashAssignment[]>>('/api/cleaner/washes/history');
-    return response.data.body || [];
+    const params: any = { page, size };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (status) params.status = status;
+
+    const response = await apiClient.get<ApiWrapper<Page<WashAssignment>>>('/api/cleaner/washes/history', { params });
+    return response.data.body;
   } catch (error) {
     console.error('Error fetching wash history:', error);
     throw error;

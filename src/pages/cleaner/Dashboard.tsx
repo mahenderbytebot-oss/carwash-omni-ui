@@ -23,7 +23,6 @@ import {
   IonLabel,
   type RefresherEventDetail 
 } from '@ionic/react';
-import { useHistory } from 'react-router-dom';
 import { 
   checkmarkCircleOutline,
   timeOutline,
@@ -42,12 +41,11 @@ import {
 } from '../../services/cleanerDashboardService';
 
 /**
- * Cleaner Dashboard Component
+ * Partner Dashboard Component
  * 
  * Shows assigned washes and allows cleaners to start/complete tasks.
  */
-const CleanerDashboard: React.FC = () => {
-  const history = useHistory();
+const PartnerDashboard: React.FC = () => {
   const { user, logout } = useAuthStore();
   
   const [assignments, setAssignments] = useState<WashAssignment[]>([]);
@@ -59,7 +57,7 @@ const CleanerDashboard: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    history.push('/login');
+    window.location.replace('/login');
   };
 
   const fetchAssignments = async () => {
@@ -184,7 +182,7 @@ const CleanerDashboard: React.FC = () => {
         </IonRefresher>
         
         <DashboardHeader
-          title="Cleaner Dashboard"
+          title="Partner Dashboard"
           userName={user?.name || 'Cleaner'}
           userRole={user?.role || 'CLEANER'}
           onLogout={handleLogout}
@@ -380,4 +378,4 @@ const CleanerDashboard: React.FC = () => {
   );
 };
 
-export default CleanerDashboard;
+export default PartnerDashboard;

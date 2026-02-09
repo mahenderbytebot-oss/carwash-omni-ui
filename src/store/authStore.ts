@@ -9,6 +9,7 @@ interface User {
   mobile: string;
   role: UserRole;
   serviceProviderId?: number;
+  customerId?: string;
 }
 
 interface AuthState {

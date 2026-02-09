@@ -12,7 +12,7 @@ export interface AddVehicleRequest {
   model: string;
   year: number;
   color: string;
-  licensePlate: string;
+  registrationNumber: string;
   type: string; // sedan, suv, etc.
 }
 
@@ -28,7 +28,7 @@ interface ApiWrapper<T> {
 export const addVehicle = async (customerId: string, data: AddVehicleRequest): Promise<Vehicle> => {
   try {
     const payload = {
-      registrationNumber: data.licensePlate,
+      registrationNumber: data.registrationNumber,
       model: data.model,
       make: data.make,
       color: data.color,
@@ -55,6 +55,21 @@ export const deleteVehicle = async (vehicleId: string): Promise<void> => {
     await apiClient.delete(`/api/vehicles/${vehicleId}`);
   } catch (error) {
     console.error('Error deleting vehicle:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetches all vehicles for the current user
+ */
+export const getMyVehicles = async (customerId: string): Promise<Vehicle[]> => {
+  try {
+    const response = await apiClient.get<ApiWrapper<Vehicle[]>>('/api/customer/vehicles', {
+      params: { customerId }
+    });
+    return response.data.body || [];
+  } catch (error) {
+    console.error('Error fetching my vehicles:', error);
     throw error;
   }
 };

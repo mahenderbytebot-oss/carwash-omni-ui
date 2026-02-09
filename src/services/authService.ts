@@ -21,6 +21,7 @@ export interface User {
   name: string;
   mobile: string;
   role: UserRole;
+  customerId?: string;
 }
 
 export interface LoginResponse {
@@ -87,7 +88,8 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRespons
           id: body.userId.toString(),
           name: body.name,
           mobile: credentials.mobile,
-          role: body.role as UserRole
+          role: body.role as UserRole,
+          customerId: body.customerId?.toString()
         },
         token: body.token
       };
@@ -131,7 +133,8 @@ export const registerCustomer = async (data: Omit<RegisterRequest, 'role' | 'ser
           id: body.userId.toString(),
           name: body.name,
           mobile: data.phone,
-          role: body.role as UserRole
+          role: body.role as UserRole,
+          customerId: body.customerId?.toString()
         },
         token: body.token
       };

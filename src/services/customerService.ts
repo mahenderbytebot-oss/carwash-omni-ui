@@ -24,7 +24,7 @@ export interface Vehicle {
   model: string;
   year: number;
   color: string;
-  licensePlate: string;
+  registrationNumber: string;
   customerId: string;
   subscriptions?: Subscription[];
 }
@@ -36,6 +36,7 @@ export interface Subscription {
   startDate: string;
   endDate: string;
   status: string; // 'ACTIVE', 'INACTIVE' from backend
+  active?: boolean;
   price: number;
   customer?: Customer;
   vehicle?: Vehicle;
@@ -88,9 +89,12 @@ interface ApiWrapper<T> {
 /**
  * Fetches all customers
  */
-export const getAllCustomers = async (query?: string): Promise<Customer[]> => {
+export const getAllCustomers = async (query?: string, size: number = 10): Promise<Customer[]> => {
   try {
-    const params = query ? { query } : {};
+    const params: any = {};
+    if (query) params.query = query;
+    if (size) params.size = size;
+    
     const response = await apiClient.get<ApiWrapper<Customer[]>>('/api/customers', { params });
     return response.data.body || [];
   } catch (error) {

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 143 143" width="143" height="143">
+  <defs>
+    <linearGradient id="teal-gradient-icon" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#23A6A4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#69D8D6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <path d="M 71.5,143 C 32,143 0,111 0,71.5 C 0,32 71.5,0 71.5,0 C 71.5,0 143,32 143,71.5 C 143,111 111,143 71.5,143 Z" fill="url(#teal-gradient-icon)" />
+  <path d="M 71.5,30 L 81,62 L 113,71.5 L 81,81 L 71.5,113 L 62,81 L 30,71.5 L 62,62 Z" fill="#FFFFFF" />
+  <path d="M 20,85 C 20,115 45,135 71.5,135" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" />
+</svg>

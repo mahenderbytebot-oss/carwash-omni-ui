@@ -15,6 +15,7 @@ export interface StatCardProps {
   className?: string;
   // keeping color prop but ignoring it for minimalist design or using it for icon color only
   color?: string;
+  onClick?: () => void;
 }
 
 /**
@@ -27,10 +28,18 @@ const StatCard: React.FC<StatCardProps> = ({
   value,
   icon,
   trend,
-  className = ''
+  className = '',
+  onClick
 }) => {
   return (
-    <IonCard className={clsx("transition-all duration-200 hover:shadow-md m-0", className)}>
+    <IonCard 
+      className={clsx(
+        "transition-all duration-200 hover:shadow-md m-0", 
+        onClick && "cursor-pointer hover:bg-accent/5",
+        className
+      )}
+      onClick={onClick}
+    >
       <IonCardContent className="p-6">
         <div className="flex items-center justify-between space-y-0 pb-2">
           <p className="ion-text-sm ion-font-medium text-muted-foreground">

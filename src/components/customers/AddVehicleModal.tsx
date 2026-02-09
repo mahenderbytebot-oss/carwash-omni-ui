@@ -29,7 +29,7 @@ const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, customerId, o
     model: '',
     year: new Date().getFullYear(),
     color: '',
-    licensePlate: '',
+    registrationNumber: '',
     type: 'sedan'
   });
   const [loading, setLoading] = useState(false);
@@ -40,7 +40,7 @@ const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, customerId, o
   };
 
   const handleSubmit = async () => {
-    if (!formData.make || !formData.model || !formData.licensePlate) {
+    if (!formData.make || !formData.model || !formData.registrationNumber) {
       setError('Make, Model, and License Plate are required.');
       return;
     }
@@ -50,7 +50,7 @@ const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, customerId, o
       setError(null);
       await addVehicle(customerId, formData);
       setFormData({
-        make: '', model: '', year: new Date().getFullYear(), color: '', licensePlate: '', type: 'sedan'
+        make: '', model: '', year: new Date().getFullYear(), color: '', registrationNumber: '', type: 'sedan'
       });
       onSuccess();
       onClose();
@@ -113,8 +113,8 @@ const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, customerId, o
             <IonItem>
               <IonLabel position="stacked">License Plate *</IonLabel>
               <IonInput 
-                value={formData.licensePlate} 
-                onIonChange={e => handleChange('licensePlate', e.detail.value!)} 
+                value={formData.registrationNumber} 
+                onIonChange={e => handleChange('registrationNumber', e.detail.value!)} 
                 placeholder="Ex. ABC-123"
                 required
               />

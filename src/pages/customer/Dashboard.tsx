@@ -1,106 +1,102 @@
-import React from 'react';
-import { IonPage, IonContent, IonIcon, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonButton, IonBadge } from '@ionic/react';
-import { useHistory } from 'react-router-dom';
+import React, { useState } from 'react';
+import { 
+  IonPage, 
+  IonContent, 
+  IonIcon, 
+  IonCard, 
+  IonCardContent, 
+  IonButton, 
+  IonBadge,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
+  useIonViewWillEnter,
+  IonSpinner,
+  IonRefresher,
+  IonRefresherContent
+} from '@ionic/react';
 import {
   addCircleOutline,
   timeOutline,
   locationOutline,
   carOutline,
-  checkmarkCircleOutline,
-  ribbonOutline
+  calendarOutline,
+  alertCircleOutline
 } from 'ionicons/icons';
 import { useAuthStore } from '../../store/authStore';
 import DashboardHeader from '../../components/ui/DashboardHeader';
-// Removed custom component imports
-
-interface CustomerBooking {
-  id: string;
-  service: string;
-  date: string;
-  time: string;
-  status: 'scheduled' | 'in-progress' | 'completed';
-  cleaner?: string;
-  price: number;
-  location?: string;
-}
+import { getMyWashes, type WashRecord } from '../../services/washService';
+import { format } from 'date-fns';
 
 const CustomerDashboard: React.FC = () => {
-  const history = useHistory();
   const { user, logout } = useAuthStore();
+  const [todayWashes, setTodayWashes] = useState<WashRecord[]>([]);
+  const [activeTabWashes, setActiveTabWashes] = useState<WashRecord[]>([]);
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [loading, setLoading] = useState<boolean>(true);
 
   const handleLogout = () => {
     logout();
-    history.push('/login');
+    window.location.replace('/login');
   };
 
-  const upcomingAppointments: CustomerBooking[] = [
-    {
-      id: '1',
-      service: 'Premium Wash & Wax',
-      date: 'Today',
-      time: '2:00 PM',
-      status: 'scheduled',
-      cleaner: 'Mike Johnson',
-      price: 49.99,
-      location: '123 Main St'
-    },
-    {
-      id: '2',
-      service: 'Interior Detailing',
-      date: 'Tomorrow',
-      time: '10:00 AM',
-      status: 'scheduled',
-      cleaner: 'Sarah Williams',
-      price: 79.99,
-      location: '123 Main St'
-    },
-    {
-      id: '3',
-      service: 'Express Wash',
-      date: 'Dec 28',
-      time: '3:30 PM',
-      status: 'scheduled',
-      price: 29.99,
-      location: '123 Main St'
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Parallel fetch for efficiency
+      const [todayData, tabData] = await Promise.all([
+        getMyWashes('TODAY'),
+        getMyWashes(activeTab.toUpperCase())
+      ]);
+      
+      setTodayWashes(todayData.content);
+      setActiveTabWashes(tabData.content);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const serviceHistory: CustomerBooking[] = [
-    {
-      id: '4',
-      service: 'Premium Wash',
-      date: 'Dec 20, 2024',
-      time: '11:00 AM',
-      status: 'completed',
-      cleaner: 'Tom Davis',
-      price: 39.99
-    },
-    {
-      id: '5',
-      service: 'Basic Wash',
-      date: 'Dec 15, 2024',
-      time: '2:00 PM',
-      status: 'completed',
-      cleaner: 'Mike Johnson',
-      price: 24.99
-    },
-    {
-      id: '6',
-      service: 'Deluxe Wash & Wax',
-      date: 'Dec 10, 2024',
-      time: '9:30 AM',
-      status: 'completed',
-      cleaner: 'Sarah Williams',
-      price: 59.99
+  useIonViewWillEnter(() => {
+    loadData();
+  });
+
+  const handleTabChange = async (tab: 'upcoming' | 'past') => {
+    setActiveTab(tab);
+    setLoading(true);
+    try {
+      const data = await getMyWashes(tab.toUpperCase());
+      setActiveTabWashes(data.content);
+    } catch (error) {
+      console.error('Error filtering washes:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+  const handleRefresh = async (event: CustomEvent) => {
+    await loadData();
+    event.detail.complete();
+  };
+
+  const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'scheduled': return 'secondary';
-      case 'in-progress': return 'destructive'; // Using destructive for alert/progress for now, or default
-      case 'completed': return 'default';
-      default: return 'outline';
+      case 'SCHEDULED': return 'primary';
+      case 'ASSIGNED': return 'secondary';
+      case 'IN_PROGRESS': return 'warning';
+      case 'COMPLETED': return 'success';
+      case 'VERIFIED': return 'success';
+      case 'MISSED': return 'medium'; // Updated from SKIPPED
+      default: return 'medium';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy h:mm a');
+    } catch (e) {
+      return dateString;
     }
   };
 
@@ -115,123 +111,131 @@ const CustomerDashboard: React.FC = () => {
             onLogout={handleLogout}
           />
 
-          <div className="container mx-auto px-4 pt-6 space-y-8">
+          <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+            <IonRefresherContent></IonRefresherContent>
+          </IonRefresher>
+
+          <div className="container mx-auto px-4 pt-6 space-y-6">
             {/* Welcome Section */}
             <div>
-              <h2 className="text-3xl font-bold tracking-tight">
+              <h2 className="text-2xl font-bold tracking-tight">
                 Welcome back, {user?.name?.split(' ')[0] || 'Customer'}!
               </h2>
               <p className="text-muted-foreground">
-                Manage your vehicle services and appointments.
+                Here is your vehicle service overview.
               </p>
             </div>
 
-            {/* Quick Booking Card */}
-            <IonCard className="bg-primary text-primary-foreground border-none m-0">
-              <IonCardContent className="p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-2 bg-primary-foreground/10 rounded-full">
-                       <IonIcon icon={addCircleOutline} className="text-2xl" />
-                    </div>
-                    <h3 className="ion-text-2xl ion-font-bold">Book a New Service</h3>
-                  </div>
-                  <p className="text-primary-foreground/80 mb-4 max-w-lg">
-                    Choose from our premium car wash services and schedule at your convenience.
-                  </p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-2 ion-text-sm text-primary-foreground/70">
-                    <span className="flex items-center gap-1">
-                      <IonIcon icon={carOutline} /> Multiple Services
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <IonIcon icon={timeOutline} /> Flexible Scheduling
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <IonIcon icon={ribbonOutline} /> Loyalty Rewards
-                    </span>
-                  </div>
-                </div>
-                <IonButton size="large" fill="solid" color="secondary" className="shrink-0 w-full sm:w-auto font-semibold">
-                  Book Now
-                </IonButton>
-              </IonCardContent>
-            </IonCard>
-
-            {/* Upcoming Appointments */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="ion-text-xl ion-font-semibold ion-tracking-tight">Upcoming Appointments</h3>
-                <IonButton fill="clear" size="small" className="ion-text-sm">View all</IonButton>
-              </div>
+            {/* Today's Wash Status */}
+            <div>
+              <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                <IonIcon icon={timeOutline} className="text-primary" />
+                Today's Wash Status
+              </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {upcomingAppointments.map((appointment) => (
-                  <IonCard key={appointment.id} className="m-0">
-                    <IonCardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <IonBadge color={getStatusBadgeVariant(appointment.status)}>
-                          {appointment.status}
-                        </IonBadge>
-                        <span className="ion-font-bold ion-text-lg">${appointment.price.toFixed(2)}</span>
-                      </div>
-                      <IonCardTitle className="ion-text-lg mt-2">{appointment.service}</IonCardTitle>
-                      <IonCardSubtitle>
-                        {appointment.date} at {appointment.time}
-                      </IonCardSubtitle>
-                    </IonCardHeader>
-                    <IonCardContent>
-                      <div className="space-y-2 ion-text-sm text-muted-foreground">
-                         <div className="flex items-center gap-2">
-                            <IonIcon icon={locationOutline} className="text-base" />
-                            <span>{appointment.location || 'N/A'}</span>
-                         </div>
-                         {appointment.cleaner && (
-                           <div className="flex items-center gap-2">
-                              <IonIcon icon={carOutline} className="text-base" />
-                              <span>Cleaner: {appointment.cleaner}</span>
-                           </div>
-                         )}
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <IonButton fill="outline" size="small" className="w-full">Reschedule</IonButton>
-                        <IonButton fill="clear" size="small" className="w-full">Details</IonButton>
-                      </div>
-                    </IonCardContent>
-                  </IonCard>
-                ))}
-              </div>
+              {loading && todayWashes.length === 0 ? (
+                 <div className="flex justify-center p-4"><IonSpinner /></div>
+              ) : todayWashes.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {todayWashes.map((wash) => (
+                    <IonCard key={wash.id} className="m-0 border-l-4 border-l-primary">
+                      <IonCardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-bold text-lg">{wash.vehicle?.make} {wash.vehicle?.model}</h4>
+                            <p className="text-sm text-muted-foreground uppercase">{wash.vehicle?.registrationNumber}</p>
+                          </div>
+                          <IonBadge color={getStatusBadgeColor(wash.status)}>{wash.status.replace('_', ' ')}</IonBadge>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-sm mt-3">
+                           <IonIcon icon={locationOutline} />
+                           <span>Location available in details</span>
+                        </div>
+                        
+                        {wash.cleaner && (
+                          <div className="mt-3 p-3 bg-secondary/10 rounded-lg flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold">
+                                {wash.cleaner.name.charAt(0)}
+                             </div>
+                             <div>
+                               <p className="text-sm font-medium">Partner: {wash.cleaner.name}</p>
+                               <p className="text-xs text-muted-foreground">{wash.cleaner.mobile}</p>
+                             </div>
+                          </div>
+                        )}
+                      </IonCardContent>
+                    </IonCard>
+                  ))}
+                </div>
+              ) : (
+                <IonCard className="m-0 bg-muted/30 border-dashed">
+                  <IonCardContent className="flex flex-col items-center justify-center p-6 text-center">
+                    <IonIcon icon={calendarOutline} className="text-4xl text-muted-foreground mb-2" />
+                    <p className="text-muted-foreground">No washes scheduled for today.</p>
+                  </IonCardContent>
+                </IonCard>
+              )}
             </div>
 
-            {/* Service History */}
-            <div className="space-y-4">
-               <h3 className="ion-text-xl ion-font-semibold ion-tracking-tight">Service History</h3>
-               <IonCard className="m-0">
-                 <IonCardContent className="p-0">
-                    <div className="divide-y">
-                      {serviceHistory.map((service) => (
-                        <div key={service.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 hover:bg-muted/50 transition-colors">
-                          <div className="flex items-start gap-4">
-                            <div className="p-2 rounded-full bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                               <IonIcon icon={checkmarkCircleOutline} className="text-xl" />
-                            </div>
-                            <div>
-                               <p className="ion-font-medium">{service.service}</p>
-                               <p className="ion-text-sm text-muted-foreground">{service.date} • {service.time}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
-                             <div className="text-right">
-                                <p className="ion-font-bold">${service.price.toFixed(2)}</p>
-                                {service.cleaner && <p className="ion-text-xs text-muted-foreground">{service.cleaner}</p>}
+            {/* Tabs for Upcoming/Past */}
+            <div>
+              <IonSegment value={activeTab} onIonChange={e => handleTabChange(e.detail.value as any)} className="mb-4">
+                <IonSegmentButton value="upcoming">
+                  <IonLabel>Upcoming</IonLabel>
+                </IonSegmentButton>
+                <IonSegmentButton value="past">
+                  <IonLabel>Past History</IonLabel>
+                </IonSegmentButton>
+              </IonSegment>
+
+              {loading ? (
+                <div className="flex justify-center p-8"><IonSpinner /></div>
+              ) : activeTabWashes.length > 0 ? (
+                <div className="space-y-4">
+                  {activeTabWashes.map((wash) => (
+                    <IonCard key={wash.id} className="m-0">
+                      <IonCardContent className="flex flex-col sm:flex-row gap-4 p-4">
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                             <div>
+                               <h4 className="font-bold">{wash.subscription?.planName || 'Wash Service'}</h4>
+                               <p className="text-sm text-muted-foreground">{formatDate(wash.scheduledDateTime)}</p>
                              </div>
-                             <IonButton fill="outline" size="small">Book Again</IonButton>
+                             <IonBadge color={getStatusBadgeColor(wash.status)}>{wash.status}</IonBadge>
+                          </div>
+                          
+                          <div className="mt-2 flex items-center gap-2 text-sm">
+                            <IonIcon icon={carOutline} className="text-muted-foreground" />
+                            <span>{wash.vehicle?.make} {wash.vehicle?.model} ({wash.vehicle?.registrationNumber})</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                 </IonCardContent>
-               </IonCard>
+                        
+                        <div className="flex flex-col justify-center gap-2 sm:border-l sm:pl-4">
+                           <IonButton fill="outline" size="small" routerLink={`/customer/washes/${wash.id}`}>
+                             Details
+                           </IonButton>
+                        </div>
+                      </IonCardContent>
+                    </IonCard>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 opacity-60">
+                   <IonIcon icon={alertCircleOutline} className="text-4xl mb-2" />
+                   <p>No {activeTab} washes found.</p>
+                </div>
+              )}
             </div>
+            
+            {/* Quick Action */}
+            <div className="fixed bottom-6 right-6 z-10">
+               <IonButton routerLink="/customer/book" shape="round" className="shadow-lg" size="large">
+                  <IonIcon slot="start" icon={addCircleOutline} />
+                  Book Wash
+               </IonButton>
+            </div>
+
           </div>
         </div>
       </IonContent>

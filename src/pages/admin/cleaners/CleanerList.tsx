@@ -74,7 +74,7 @@ const CleanerList: React.FC = () => {
             <IonRefresherContent />
           </IonRefresher>
           <DashboardHeader
-            title="Cleaners"
+            title="Partners"
             userName={user?.name || 'Admin'}
             userRole={user?.role || 'ADMIN'}
             onLogout={() => { logout(); history.push('/login'); }}
@@ -84,12 +84,12 @@ const CleanerList: React.FC = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <IonText><h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>Cleaner Management</h2></IonText>
-                <IonNote>View and manage your team of cleaners</IonNote>
+                <IonText><h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>Partner Management</h2></IonText>
+                <IonNote>View and manage your team of partners</IonNote>
               </div>
               <IonButton color="primary" onClick={() => setIsCreateModalOpen(true)}>
                 <IonIcon icon={addOutline} slot="start" />
-                Add Cleaner
+                Add Partner
               </IonButton>
             </div>
 
@@ -97,22 +97,22 @@ const CleanerList: React.FC = () => {
             <IonSearchbar
               value={searchText}
               onIonInput={(e) => setSearchText(e.detail.value || '')}
-              placeholder="Search by name..."
+              placeholder="Search by partner name..."
               debounce={300}
             />
 
             {/* Cleaner List */}
             <div className="space-y-4">
               {loading ? (
-                <div className="ion-text-center ion-padding"><IonNote>Loading cleaners...</IonNote></div>
+                <div className="ion-text-center ion-padding"><IonNote>Loading partners...</IonNote></div>
               ) : filteredCleaners.length === 0 ? (
                 <IonCard>
                   <IonCardContent className="ion-text-center ion-padding">
                     <div style={{ padding: '1rem', backgroundColor: 'var(--ion-color-light)', borderRadius: '50%', display: 'inline-block', marginBottom: '1rem' }}>
                       <IonIcon icon={personOutline} style={{ fontSize: '2.5rem', color: 'var(--ion-color-medium)' }} />
                     </div>
-                    <IonText><h3 style={{ fontWeight: 600, margin: 0 }}>No cleaners found</h3></IonText>
-                    <IonNote>Try adjusting your search or add a new cleaner to get started.</IonNote>
+                    <IonText><h3 style={{ fontWeight: 600, margin: 0 }}>No partners found</h3></IonText>
+                    <IonNote>Try adjusting your search or add a new partner to get started.</IonNote>
                   </IonCardContent>
                 </IonCard>
               ) : (

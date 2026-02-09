@@ -56,7 +56,7 @@ const CreateCleanerModal: React.FC<CreateCleanerModalProps> = ({ isOpen, onClose
         ...formData,
         serviceProviderId: user?.serviceProviderId || 0
       });
-      setToastMessage('Cleaner created successfully!');
+      setToastMessage('Partner created successfully!');
       
       setTimeout(() => {
         setFormData({
@@ -77,7 +77,7 @@ const CreateCleanerModal: React.FC<CreateCleanerModalProps> = ({ isOpen, onClose
     <IonModal isOpen={isOpen} onDidDismiss={onClose}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle className="pl-4">Add New Cleaner</IonTitle>
+          <IonTitle className="pl-4">Add New Partner</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={onClose}>Cancel</IonButton>
           </IonButtons>
@@ -166,7 +166,7 @@ const CreateCleanerModal: React.FC<CreateCleanerModalProps> = ({ isOpen, onClose
 
           <div className="mt-6 px-4">
             <IonButton expand="block" type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Cleaner'}
+              {loading ? 'Creating...' : 'Create Partner'}
             </IonButton>
           </div>
         </form>

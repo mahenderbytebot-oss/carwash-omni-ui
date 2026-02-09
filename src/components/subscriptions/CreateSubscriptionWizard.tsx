@@ -221,7 +221,7 @@ const CreateSubscriptionWizard: React.FC<CreateSubscriptionWizardProps> = ({ isO
               <option value="">Select a vehicle...</option>
               {customerVehicles.map(v => (
                 <option key={v.id} value={v.id}>
-                  {v.make} {v.model} ({v.licensePlate})
+                  {v.make} {v.model} ({v.registrationNumber})
                 </option>
               ))}
             </select>

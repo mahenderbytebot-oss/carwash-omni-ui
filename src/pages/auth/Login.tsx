@@ -16,9 +16,11 @@ import {
 } from '@ionic/react';
 import { useAuthStore } from '../../store/authStore';
 import { useHistory } from 'react-router-dom';
-import { logInOutline, callOutline, keypadOutline } from 'ionicons/icons';
+import { callOutline, keypadOutline } from 'ionicons/icons';
 import * as authService from '../../services/authService';
 // Removed custom component imports
+
+import logo from '../../assets/logo.svg';
 
 const Login: React.FC = () => {
   const { login, setLoading, setError, clearError, isLoading, error } = useAuthStore();
@@ -104,10 +106,10 @@ const Login: React.FC = () => {
         <div className="flex min-h-full items-center justify-center p-4">
           <IonCard className="w-full max-w-md shadow-lg border-0 bg-white/95 backdrop-blur-sm dark:bg-zinc-900/90 m-0">
             <IonCardHeader className="space-y-1 text-center pb-6">
-              <div className="mx-auto bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-2">
-                <IonIcon icon={logInOutline} className="text-primary text-2xl" />
+              <div className="mx-auto w-24 h-24 mb-4">
+                <img src={logo} alt="Glossly Logo" className="w-full h-full object-contain" />
               </div>
-              <IonCardTitle className="ion-text-2xl ion-font-bold tracking-tight">Welcome Back</IonCardTitle>
+              <IonCardTitle className="ion-text-2xl ion-font-bold tracking-tight">Welcome to Glossly</IonCardTitle>
               <IonCardSubtitle className="text-muted-foreground">
                 Enter your mobile number and PIN to sign in
               </IonCardSubtitle>
@@ -116,7 +118,7 @@ const Login: React.FC = () => {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <IonItem className={`${mobileError ? 'ion-invalid' : ''} border rounded-md`} lines="none">
-                    <IonIcon slot="start" icon={callOutline} className="text-muted-foreground" />
+                    <IonIcon slot="start" icon={callOutline} className="text-muted-foreground mr-3" />
                     <IonInput
                       label="Mobile Number"
                       labelPlacement="floating"
@@ -149,7 +151,7 @@ const Login: React.FC = () => {
                     </a>
                   </div>
                   <IonItem className={`${pinError ? 'ion-invalid' : ''} border rounded-md`} lines="none">
-                    <IonIcon slot="start" icon={keypadOutline} className="text-muted-foreground" />
+                    <IonIcon slot="start" icon={keypadOutline} className="text-muted-foreground mr-3" />
                     <IonInput 
                       label="PIN"
                       labelPlacement="floating"

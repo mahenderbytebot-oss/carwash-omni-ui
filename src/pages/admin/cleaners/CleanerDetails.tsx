@@ -73,7 +73,7 @@ const CleanerDetails: React.FC = () => {
             {/* Back Button */}
             <IonButton fill="clear" onClick={() => history.goBack()} className="pl-0">
               <IonIcon icon={arrowBack} slot="start" />
-              Back to Cleaners
+              Back to Partners
             </IonButton>
 
             {loading ? (

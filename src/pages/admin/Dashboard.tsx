@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton as StandardIonButton, IonSelect, IonSelectOption, IonLoading, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonBadge } from '@ionic/react';
+import { IonPage, IonContent, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton as StandardIonButton, IonSelect, IonSelectOption, IonLoading, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonIcon } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { 
   peopleOutline, 
-  personOutline, 
-  cashOutline, 
-  calendarOutline
+ 
+ 
+  calendarOutline,
+  closeOutline,
+  personCircleOutline,
+  timeOutline,
+  carSportOutline
 } from 'ionicons/icons';
 import { useAuthStore } from '../../store/authStore';
 import DashboardHeader from '../../components/ui/DashboardHeader';
@@ -13,8 +17,10 @@ import StatCard from '../../components/ui/StatCard';
 // Removed custom component imports
 import { getSubscriptions, assignCleaner } from '../../services/subscriptionService';
 import { getAllCleaners } from '../../services/cleanerService';
-import type { Subscription } from '../../services/customerService';
+import { getAllCustomers, type Subscription } from '../../services/customerService';
 import type { Cleaner } from '../../services/cleanerService';
+import { getTodayWashes } from '../../services/washService';
+import type { WashRecord } from '../../services/washService';
 
 /**
  * Admin Dashboard Component
@@ -26,7 +32,10 @@ const AdminDashboard: React.FC = () => {
   const history = useHistory();
   const { user, logout } = useAuthStore();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [todayWashes, setTodayWashes] = useState<WashRecord[]>([]);
+  const [totalCustomers, setTotalCustomers] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   
   // Assignment Modal State
@@ -34,21 +43,28 @@ const AdminDashboard: React.FC = () => {
   const [selectedSub, setSelectedSub] = useState<Subscription | null>(null);
   const [selectedCleanerId, setSelectedCleanerId] = useState<number | null>(null);
   const [assigning, setAssigning] = useState(false);
+  
+  // Pending Washes Modal State
+  const [showPendingModal, setShowPendingModal] = useState(false);
 
   // Handle logout
   const handleLogout = () => {
     logout();
-    history.push('/login');
+    window.location.href = '/login';
   };
 
   const fetchData = async () => {
     try {
-        const [subsData, cleanersData] = await Promise.all([
+        const [subsData, cleanersData, washesData, customersData] = await Promise.all([
             getSubscriptions(),
-            getAllCleaners()
+            getAllCleaners(),
+            getTodayWashes(),
+            getAllCustomers('', 1000)
         ]);
         setSubscriptions(subsData);
         setCleaners(cleanersData);
+        setTodayWashes(washesData);
+        setTotalCustomers(customersData.length);
     } catch (error) {
         console.error("Failed to fetch dashboard data", error);
     } finally {
@@ -86,55 +102,13 @@ const AdminDashboard: React.FC = () => {
 
   // Mock statistics data
   const stats = {
-    totalCustomers: 1247,
-    activeCleaners: cleaners.filter(c => c.active).length || 23,
+    totalCustomers: totalCustomers,
+    totalWashes: todayWashes?.length || 0,
     todayRevenue: 3850,
-    pendingBookings: 12
+    pendingBookings: (todayWashes || []).filter(w => w.status === 'SCHEDULED' || w.status === 'ASSIGNED').length
   };
 
-  // Mock recent bookings data
-  const recentBookings = [
-    {
-      id: '1',
-      customerName: 'John Smith',
-      service: 'Premium Wash',
-      time: '10:30 AM',
-      status: 'in-progress' as const,
-      cleaner: 'Mike Johnson'
-    },
-    {
-      id: '2',
-      customerName: 'Sarah Williams',
-      service: 'Basic Wash',
-      time: '11:00 AM',
-      status: 'pending' as const
-    },
-    {
-      id: '3',
-      customerName: 'David Brown',
-      service: 'Deluxe Wash',
-      time: '11:30 AM',
-      status: 'completed' as const,
-      cleaner: 'Tom Davis'
-    },
-    {
-      id: '4',
-      customerName: 'Emily Davis',
-      service: 'Premium Wash',
-      time: '12:00 PM',
-      status: 'pending' as const
-    }
-  ];
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'completed': return 'default';
-      case 'in-progress': return 'secondary';
-      case 'pending': return 'outline';
-      case 'cancelled': return 'destructive';
-      default: return 'secondary';
-    }
-  };
 
   return (
     <IonPage>
@@ -159,29 +133,22 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Statistics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <StatCard
+                title="Total Washes Today"
+                value={stats.totalWashes}
+                icon={calendarOutline}
+              />
+              <StatCard
+                title="Pending Washes Today"
+                value={stats.pendingBookings}
+                icon={calendarOutline}
+                onClick={() => setShowPendingModal(true)}
+              />
               <StatCard
                 title="Total Customers"
                 value={stats.totalCustomers}
                 icon={peopleOutline}
-                trend={{ value: 12, direction: 'up' }}
-              />
-              <StatCard
-                title="Active Cleaners"
-                value={stats.activeCleaners}
-                icon={personOutline}
-                trend={{ value: 5, direction: 'up' }}
-              />
-              <StatCard
-                title="Today's Revenue"
-                value={`$${stats.todayRevenue}`}
-                icon={cashOutline}
-                trend={{ value: 8, direction: 'up' }}
-              />
-              <StatCard
-                title="Pending Bookings"
-                value={stats.pendingBookings}
-                icon={calendarOutline}
               />
             </div>
 
@@ -215,7 +182,7 @@ const AdminDashboard: React.FC = () => {
                                         color="warning"
                                         onClick={() => openAssignModal(sub)}
                                     >
-                                        Assign Cleaner
+                                        Assign Partner
                                     </StandardIonButton>
                                 </div>
                             ))}
@@ -225,47 +192,7 @@ const AdminDashboard: React.FC = () => {
             )}
 
             {/* Recent Bookings Section */}
-            <IonCard className="m-0">
-              <IonCardHeader>
-                <IonCardTitle>Recent Bookings</IonCardTitle>
-                <IonCardSubtitle>Latest booking requests and their status</IonCardSubtitle>
-              </IonCardHeader>
-              <IonCardContent>
-                <div className="space-y-4">
-                  {recentBookings.map((booking) => (
-                    <div
-                      key={booking.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="mb-3 sm:mb-0">
-                        <div className="ion-font-medium">
-                          {booking.customerName}
-                        </div>
-                        <div className="flex flex-wrap gap-2 ion-text-sm text-muted-foreground mt-1">
-                          <span>{booking.service}</span>
-                          <span>•</span>
-                          <span>{booking.time}</span>
-                          {booking.cleaner && (
-                            <>
-                              <span>•</span>
-                              <span>Cleaner: {booking.cleaner}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <IonBadge color={getStatusBadgeVariant(booking.status)}>
-                        {booking.status.replace('-', ' ')}
-                      </IonBadge>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-6">
-                  <StandardIonButton expand="block" fill="outline" color="medium">
-                    View All Bookings
-                  </StandardIonButton>
-                </div>
-              </IonCardContent>
-            </IonCard>
+
 
             {/* Quick Actions Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -290,7 +217,7 @@ const AdminDashboard: React.FC = () => {
                     <span className="text-xl">🧹</span>
                   </div>
                   <div>
-                    <h3 className="ion-font-semibold">Manage Cleaners</h3>
+                    <h3 className="ion-font-semibold">Manage Partners</h3>
                     <p className="ion-text-sm text-muted-foreground mt-1">
                       Assign tasks and monitor performance
                     </p>
@@ -321,7 +248,7 @@ const AdminDashboard: React.FC = () => {
         <IonModal isOpen={showAssignModal} onDidDismiss={() => setShowAssignModal(false)} className="auto-height">
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle>Assign Cleaner</IonTitle>
+                    <IonTitle>Assign Partner</IonTitle>
                     <IonButtons slot="end">
                         <StandardIonButton onClick={() => setShowAssignModal(false)}>Close</StandardIonButton>
                     </IonButtons>
@@ -331,7 +258,7 @@ const AdminDashboard: React.FC = () => {
                 <p>Select a cleaner for subscription: <strong>{selectedSub?.planName}</strong></p>
                 
                 <IonSelect 
-                    label="Cleaner" 
+                    label="Partner" 
                     placeholder="Select One" 
                     value={selectedCleanerId} 
                     onIonChange={e => setSelectedCleanerId(e.detail.value)}
@@ -358,6 +285,76 @@ const AdminDashboard: React.FC = () => {
         <IonLoading isOpen={loading} message="Loading dashboard..." />
 
       </IonContent>
+
+      {/* Pending Washes Modal */}
+      <IonModal isOpen={showPendingModal} onDidDismiss={() => setShowPendingModal(false)}>
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Pending Washes Today</IonTitle>
+            <IonButtons slot="end">
+              <StandardIonButton onClick={() => setShowPendingModal(false)}>
+                <IonIcon icon={closeOutline} />
+              </StandardIonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <div className="p-4 space-y-6">
+            {Object.entries(
+              (todayWashes || [])
+                .filter(w => w.status === 'SCHEDULED' || w.status === 'ASSIGNED')
+                .reduce((acc, wash) => {
+                  const cleanerName = wash.cleaner?.name || 'Unassigned';
+                  if (!acc[cleanerName]) acc[cleanerName] = [];
+                  acc[cleanerName].push(wash);
+                  return acc;
+                }, {} as Record<string, typeof todayWashes>)
+            ).map(([cleanerName, washes]) => (
+              <div key={cleanerName} className="space-y-2">
+                <div className="flex items-center gap-2 bg-muted/30 p-2 rounded-md">
+                   <IonIcon icon={personCircleOutline} className="text-xl text-primary" />
+                   <h3 className="font-semibold text-lg">{cleanerName}</h3>
+                   <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
+                     {washes.length}
+                   </span>
+                </div>
+                <div className="grid gap-2 pl-2">
+                  {washes.map(wash => (
+                    <div key={wash.id} className="border rounded-md p-3 flex justify-between items-center bg-card">
+                      <div>
+                        <div className="flex items-center gap-2 font-medium">
+                          <IonIcon icon={carSportOutline} className="text-muted-foreground" />
+                          {wash.vehicle.make} {wash.vehicle.model}
+                        </div>
+                        <div className="text-sm text-muted-foreground ml-6">
+                           {wash.vehicle.registrationNumber}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 ml-6">
+                           <IonIcon icon={timeOutline} className="text-[10px]" />
+                           {new Date(wash.scheduledDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                           {wash.customer?.name && ` • ${wash.customer.name}`}
+                        </div>
+                      </div>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        wash.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {wash.status}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {(todayWashes || []).filter(w => w.status === 'SCHEDULED' || w.status === 'ASSIGNED').length === 0 && (
+               <div className="text-center py-10 text-muted-foreground">
+                 <p>No pending washes for today.</p>
+               </div>
+            )}
+          </div>
+        </IonContent>
+      </IonModal>
+
     </IonPage>
   );
 };

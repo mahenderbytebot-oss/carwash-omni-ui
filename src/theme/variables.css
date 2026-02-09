@@ -64,9 +64,7 @@
   --ion-color-light-tint: #f5f6f9;
 
   /* Ionic Typography Variables */
-  --ion-font-family:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+  --ion-font-family: "Inter", system-ui, -apple-system, sans-serif;
 
   /* Font Sizes - Mobile-optimized scale */
   --ion-text-xs: 0.75rem; /* 12px */

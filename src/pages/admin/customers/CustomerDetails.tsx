@@ -279,7 +279,7 @@ const CustomerDetails: React.FC = () => {
                                         <h4 className="ion-font-bold ion-text-lg">{vehicle.year > 0 ? vehicle.year : ''} {vehicle.make} {vehicle.model}</h4>
                                         <div className="ion-text-sm text-muted-foreground space-y-1">
                                             {vehicle.color && <p>Color: {vehicle.color}</p>}
-                                            <p className="font-mono bg-muted inline-block px-2 py-0.5 rounded ion-text-xs">{vehicle.licensePlate}</p>
+                                            <p className="font-mono bg-muted inline-block px-2 py-0.5 rounded ion-text-xs">{vehicle.registrationNumber}</p>
                                         </div>
                                     </div>
                                     </div>
