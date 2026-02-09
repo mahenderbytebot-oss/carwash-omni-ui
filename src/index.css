@@ -1,0 +1,256 @@
+@import "tailwindcss";
+
+@theme {
+  /* Minimalist Color Palette */
+  --color-background: #ffffff;
+  --color-foreground: #09090b;
+
+  --color-card: #ffffff;
+  --color-card-foreground: #09090b;
+ 
+  --color-popover: #ffffff;
+  --color-popover-foreground: #09090b;
+ 
+  --color-primary: #18181b;
+  --color-primary-foreground: #fafafa;
+ 
+  --color-secondary: #f4f4f5;
+  --color-secondary-foreground: #18181b;
+ 
+  --color-muted: #f4f4f5;
+  --color-muted-foreground: #71717a;
+ 
+  --color-accent: #f4f4f5;
+  --color-accent-foreground: #18181b;
+ 
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fafafa;
+
+  --color-border: #e4e4e7;
+  --color-input: #e4e4e7;
+  --color-ring: #18181b;
+
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+}
+
+/* Base utilities */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Ionic Overrides for Transparent/Minimal Theme */
+ion-content {
+  --background: var(--color-background);
+  --color: var(--color-foreground);
+}
+
+ion-item {
+  --background: transparent;
+  --border-color: var(--color-border);
+  --color: var(--color-foreground);
+}
+
+ion-list {
+  --background: transparent;
+}
+
+/* Ionic Typography Utility Classes */
+.ion-text-xs { font-size: var(--ion-text-xs); }
+.ion-text-sm { font-size: var(--ion-text-sm); }
+.ion-text-base { font-size: var(--ion-text-base); }
+.ion-text-lg { font-size: var(--ion-text-lg); }
+.ion-text-xl { font-size: var(--ion-text-xl); }
+.ion-text-2xl { font-size: var(--ion-text-2xl); }
+.ion-text-3xl { font-size: var(--ion-text-3xl); }
+
+.ion-font-normal { font-weight: var(--ion-font-normal); }
+.ion-font-medium { font-weight: var(--ion-font-medium); }
+.ion-font-semibold { font-weight: var(--ion-font-semibold); }
+.ion-font-bold { font-weight: var(--ion-font-bold); }
+
+.ion-leading-tight { line-height: var(--ion-leading-tight); }
+.ion-leading-normal { line-height: var(--ion-leading-normal); }
+.ion-leading-relaxed { line-height: var(--ion-leading-relaxed); }
+
+.ion-tracking-tight { letter-spacing: var(--ion-tracking-tight); }
+.ion-tracking-normal { letter-spacing: var(--ion-tracking-normal); }
+.ion-tracking-wide { letter-spacing: var(--ion-tracking-wide); }
+
+/* Mobile-first base typography */
+@layer base {
+  html {
+    font-family: var(--ion-font-family);
+    font-size: 16px; /* Base for rem calculations */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-size: var(--ion-text-base);
+    line-height: var(--ion-leading-normal);
+  }
+
+  /* Heading styles using Ionic variables */
+  h1 {
+    font-size: var(--ion-text-3xl);
+    font-weight: var(--ion-font-bold);
+    line-height: var(--ion-leading-tight);
+    letter-spacing: var(--ion-tracking-tight);
+  }
+
+  h2 {
+    font-size: var(--ion-text-2xl);
+    font-weight: var(--ion-font-bold);
+    line-height: var(--ion-leading-tight);
+    letter-spacing: var(--ion-tracking-tight);
+  }
+
+  h3 {
+    font-size: var(--ion-text-xl);
+    font-weight: var(--ion-font-semibold);
+    line-height: var(--ion-leading-tight);
+  }
+
+  h4 {
+    font-size: var(--ion-text-lg);
+    font-weight: var(--ion-font-semibold);
+    line-height: var(--ion-leading-normal);
+  }
+
+  p {
+    font-size: var(--ion-text-base);
+    line-height: var(--ion-leading-relaxed);
+  }
+
+  small {
+    font-size: var(--ion-text-sm);
+  }
+}
+
+/* Enhanced Ionic Component Typography */
+ion-title {
+  font-family: var(--ion-font-family);
+  font-size: var(--ion-text-lg);
+  font-weight: var(--ion-font-semibold);
+}
+
+ion-label {
+  font-family: var(--ion-font-family);
+  font-size: var(--ion-text-base);
+  font-weight: var(--ion-font-medium);
+}
+
+ion-note {
+  font-family: var(--ion-font-family);
+  font-size: var(--ion-text-sm);
+  color: var(--color-muted-foreground);
+}
+
+ion-button {
+  font-family: var(--ion-font-family);
+  font-size: var(--ion-text-sm);
+  font-weight: var(--ion-font-medium);
+  letter-spacing: var(--ion-tracking-wide);
+  text-transform: none;
+}
+
+ion-input, ion-textarea, ion-select {
+  font-family: var(--ion-font-family);
+  font-size: var(--ion-text-base);
+}
+
+ion-card-title {
+  font-family: var(--ion-font-family);
+  font-size: var(--ion-text-xl);
+  font-weight: var(--ion-font-semibold);
+}
+
+ion-card-subtitle {
+  font-family: var(--ion-font-family);
+  font-size: var(--ion-text-sm);
+  color: var(--color-muted-foreground);
+}
+
+ion-segment-button {
+  font-family: var(--ion-font-family);
+  font-size: var(--ion-text-sm);
+  font-weight: var(--ion-font-medium);
+}
+
+ion-item {
+  font-family: var(--ion-font-family);
+}
+
+ion-list-header {
+  font-family: var(--ion-font-family);
+  font-size: var(--ion-text-sm);
+  font-weight: var(--ion-font-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--ion-tracking-wide);
+}
+
+ion-toolbar {
+  font-family: var(--ion-font-family);
+}
+
+/* Global Ionic Font Application */
+* {
+  font-family: var(--ion-font-family);
+}
+
+/* Ensure all text elements inherit Ionic fonts */
+div, span, p, a, li, td, th, label, button, input, textarea, select {
+  font-family: inherit;
+}
+
+/* Form elements */
+input, textarea, select, button {
+  font-family: var(--ion-font-family);
+  font-size: var(--ion-text-base);
+}
+
+button {
+  font-weight: var(--ion-font-medium);
+}
+
+/* Links */
+a {
+  font-family: var(--ion-font-family);
+}
+
+/* Lists */
+ul, ol {
+  font-family: var(--ion-font-family);
+}
+
+/* Tables */
+table, th, td {
+  font-family: var(--ion-font-family);
+}
+
+/* Code blocks (monospace exception) */
+code, pre, kbd, samp {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
