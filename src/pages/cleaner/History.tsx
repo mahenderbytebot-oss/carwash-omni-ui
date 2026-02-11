@@ -17,6 +17,10 @@ import {
   IonButton,
   IonDatetime,
   IonModal,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
   IonSelect,
   IonSelectOption,
   IonInfiniteScroll,
@@ -223,12 +227,16 @@ const PartnerHistory: React.FC = () => {
         </div>
 
         {/* Filter Modal */}
-        <IonModal isOpen={showFilterModal} onDidDismiss={() => setShowFilterModal(false)}>
-            <IonContent className="ion-padding">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold">Filter History</h2>
-                    <IonButton fill="clear" onClick={() => setShowFilterModal(false)}>Close</IonButton>
-                </div>
+    <IonModal isOpen={showFilterModal} onDidDismiss={() => setShowFilterModal(false)}>
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle className="pl-4">Filter History</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={() => setShowFilterModal(false)}>Close</IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="ion-padding">
                 
                 <div className="space-y-4">
                     <IonItem>

@@ -70,7 +70,7 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onSu
     <IonModal isOpen={isOpen} onDidDismiss={onClose}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Create New Plan</IonTitle>
+          <IonTitle className="pl-4">Create New Plan</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={onClose}>Cancel</IonButton>
           </IonButtons>

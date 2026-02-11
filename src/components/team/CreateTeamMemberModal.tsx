@@ -64,7 +64,7 @@ const CreateTeamMemberModal: React.FC<CreateTeamMemberModalProps> = ({ isOpen, o
     <IonModal isOpen={isOpen} onDidDismiss={onClose}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Add Team Member</IonTitle>
+          <IonTitle className="pl-4">Add Team Member</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={onClose}>Cancel</IonButton>
           </IonButtons>

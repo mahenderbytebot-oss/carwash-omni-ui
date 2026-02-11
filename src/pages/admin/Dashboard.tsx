@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton as StandardIonButton, IonSelect, IonSelectOption, IonLoading, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonIcon } from '@ionic/react';
+import { IonPage, IonContent, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton as StandardIonButton, IonLoading, IonIcon } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { 
   peopleOutline, 
@@ -15,9 +15,8 @@ import { useAuthStore } from '../../store/authStore';
 import DashboardHeader from '../../components/ui/DashboardHeader';
 import StatCard from '../../components/ui/StatCard';
 // Removed custom component imports
-import { getSubscriptions, assignCleaner } from '../../services/subscriptionService';
+import { getAllCustomers } from '../../services/customerService';
 import { getAllCleaners } from '../../services/cleanerService';
-import { getAllCustomers, type Subscription } from '../../services/customerService';
 import type { Cleaner } from '../../services/cleanerService';
 import { getTodayWashes } from '../../services/washService';
 import type { WashRecord } from '../../services/washService';
@@ -31,18 +30,14 @@ import type { WashRecord } from '../../services/washService';
 const AdminDashboard: React.FC = () => {
   const history = useHistory();
   const { user, logout } = useAuthStore();
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+
 
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [todayWashes, setTodayWashes] = useState<WashRecord[]>([]);
   const [totalCustomers, setTotalCustomers] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   
-  // Assignment Modal State
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedSub, setSelectedSub] = useState<Subscription | null>(null);
-  const [selectedCleanerId, setSelectedCleanerId] = useState<number | null>(null);
-  const [assigning, setAssigning] = useState(false);
+
   
   // Pending Washes Modal State
   const [showPendingModal, setShowPendingModal] = useState(false);
@@ -55,13 +50,11 @@ const AdminDashboard: React.FC = () => {
 
   const fetchData = async () => {
     try {
-        const [subsData, cleanersData, washesData, customersData] = await Promise.all([
-            getSubscriptions(),
+        const [cleanersData, washesData, customersData] = await Promise.all([
             getAllCleaners(),
             getTodayWashes(),
             getAllCustomers('', 1000)
         ]);
-        setSubscriptions(subsData);
         setCleaners(cleanersData);
         setTodayWashes(washesData);
         setTotalCustomers(customersData.length);
@@ -76,36 +69,17 @@ const AdminDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  const unassignedSubscriptions = subscriptions.filter(s => !s.cleanerId && s.status === 'ACTIVE');
 
-  const openAssignModal = (sub: Subscription) => {
-      setSelectedSub(sub);
-      setSelectedCleanerId(null);
-      setShowAssignModal(true);
-  };
 
-  const handleAssignSubmit = async () => {
-      if (!selectedSub || !selectedCleanerId) return;
-      
-      try {
-          setAssigning(true);
-          // Assuming subscription id is string in interface but number in backend
-          await assignCleaner(Number(selectedSub.id), selectedCleanerId);
-          setShowAssignModal(false);
-          fetchData(); // Refresh data
-      } catch {
-          alert('Failed to assign cleaner');
-      } finally {
-          setAssigning(false);
-      }
-  };
+
 
   // Mock statistics data
   const stats = {
     totalCustomers: totalCustomers,
     totalWashes: todayWashes?.length || 0,
     todayRevenue: 3850,
-    pendingBookings: (todayWashes || []).filter(w => w.status === 'SCHEDULED' || w.status === 'ASSIGNED').length
+    pendingBookings: (todayWashes || []).filter(w => w.status === 'SCHEDULED' || w.status === 'ASSIGNED').length,
+    totalPartners: cleaners.length
   };
 
 
@@ -133,7 +107,7 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Statistics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 title="Total Washes Today"
                 value={stats.totalWashes}
@@ -149,138 +123,26 @@ const AdminDashboard: React.FC = () => {
                 title="Total Customers"
                 value={stats.totalCustomers}
                 icon={peopleOutline}
+                onClick={() => history.push('/admin/customers')}
+              />
+              <StatCard
+                title="Total Partners"
+                value={stats.totalPartners}
+                icon={personCircleOutline}
+                onClick={() => history.push('/admin/cleaners')}
               />
             </div>
 
-            {/* Unassigned Subscriptions Widget */}
-            {unassignedSubscriptions.length > 0 && (
-                <IonCard className="border-orange-200 bg-orange-50/30 m-0">
-                    <IonCardHeader>
-                        <IonCardTitle className="flex items-center gap-2 text-orange-700 ion-text-lg">
-                             Unassigned Subscriptions
-                        </IonCardTitle>
-                        <IonCardSubtitle>
-                            These subscriptions have no assigned cleaner.
-                        </IonCardSubtitle>
-                    </IonCardHeader>
-                    <IonCardContent>
-                        <div className="space-y-3">
-                            {unassignedSubscriptions.map(sub => (
-                                <div key={sub.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-white rounded border border-orange-100 shadow-sm">
-                                    <div>
-                                        <div className="ion-font-medium">{sub.planName}</div>
-                                        <div className="ion-text-sm text-muted-foreground">
-                                            {sub.customerName} • {sub.vehicleMake} {sub.vehicleModel} ({sub.vehiclePlate})
-                                        </div>
-                                        <div className="ion-text-xs text-gray-400 mt-1">
-                                            {sub.scheduledDays?.join(', ')} • Starts: {sub.startDate}
-                                        </div>
-                                    </div>
-                                    <StandardIonButton 
-                                        size="small" 
-                                        fill="outline"
-                                        color="warning"
-                                        onClick={() => openAssignModal(sub)}
-                                    >
-                                        Assign Partner
-                                    </StandardIonButton>
-                                </div>
-                            ))}
-                        </div>
-                    </IonCardContent>
-                </IonCard>
-            )}
+
 
             {/* Recent Bookings Section */}
 
 
-            {/* Quick Actions Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <IonCard className="hover:bg-accent/50 transition-colors cursor-pointer m-0" onClick={() => history.push('/admin/customers')}>
-                <IonCardContent className="pt-6 text-center space-y-4">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mx-auto">
-                    <span className="text-xl">👥</span>
-                  </div>
-                  <div>
-                    <h3 className="ion-font-semibold">Manage Customers</h3>
-                    <p className="ion-text-sm text-muted-foreground mt-1">
-                      View and manage customer accounts
-                    </p>
-                  </div>
-                  <StandardIonButton fill="outline" color="secondary" className="w-full">Open</StandardIonButton>
-                </IonCardContent>
-              </IonCard>
 
-              <IonCard className="hover:bg-accent/50 transition-colors cursor-pointer m-0" onClick={() => history.push('/admin/team')}>
-                <IonCardContent className="pt-6 text-center space-y-4">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mx-auto">
-                    <span className="text-xl">🧹</span>
-                  </div>
-                  <div>
-                    <h3 className="ion-font-semibold">Manage Partners</h3>
-                    <p className="ion-text-sm text-muted-foreground mt-1">
-                      Assign tasks and monitor performance
-                    </p>
-                  </div>
-                  <StandardIonButton fill="outline" color="secondary" className="w-full">Open</StandardIonButton>
-                </IonCardContent>
-              </IonCard>
-
-              <IonCard className="hover:bg-accent/50 transition-colors cursor-pointer m-0">
-                <IonCardContent className="pt-6 text-center space-y-4">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mx-auto">
-                    <span className="text-xl">📊</span>
-                  </div>
-                  <div>
-                    <h3 className="ion-font-semibold">View Reports</h3>
-                    <p className="ion-text-sm text-muted-foreground mt-1">
-                      Analytics and business insights
-                    </p>
-                  </div>
-                  <StandardIonButton fill="outline" color="secondary" className="w-full">Open</StandardIonButton>
-                </IonCardContent>
-              </IonCard>
-            </div>
           </div>
         </div>
 
-        {/* Assignment Modal */}
-        <IonModal isOpen={showAssignModal} onDidDismiss={() => setShowAssignModal(false)} className="auto-height">
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Assign Partner</IonTitle>
-                    <IonButtons slot="end">
-                        <StandardIonButton onClick={() => setShowAssignModal(false)}>Close</StandardIonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
-            <div className="p-4 space-y-4">
-                <p>Select a cleaner for subscription: <strong>{selectedSub?.planName}</strong></p>
-                
-                <IonSelect 
-                    label="Partner" 
-                    placeholder="Select One" 
-                    value={selectedCleanerId} 
-                    onIonChange={e => setSelectedCleanerId(e.detail.value)}
-                    fill="outline"
-                    labelPlacement="floating"
-                >
-                    {cleaners.map(cleaner => (
-                        <IonSelectOption key={cleaner.id} value={cleaner.id}>
-                            {cleaner.name}
-                        </IonSelectOption>
-                    ))}
-                </IonSelect>
 
-                <StandardIonButton 
-                    className="w-full" 
-                    onClick={handleAssignSubmit} 
-                    disabled={!selectedCleanerId || assigning}
-                >
-                    {assigning ? 'Assigning...' : 'Confirm Assignment'}
-                </StandardIonButton>
-            </div>
-        </IonModal>
         
         <IonLoading isOpen={loading} message="Loading dashboard..." />
 
@@ -290,7 +152,7 @@ const AdminDashboard: React.FC = () => {
       <IonModal isOpen={showPendingModal} onDidDismiss={() => setShowPendingModal(false)}>
         <IonHeader>
           <IonToolbar>
-            <IonTitle>Pending Washes Today</IonTitle>
+            <IonTitle className="pl-4">Pending Washes Today</IonTitle>
             <IonButtons slot="end">
               <StandardIonButton onClick={() => setShowPendingModal(false)}>
                 <IonIcon icon={closeOutline} />

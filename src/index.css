@@ -1,34 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  /* Minimalist Color Palette */
+  /* Deep Clean Theme (Ocean Blue & Teal) */
   --color-background: #ffffff;
-  --color-foreground: #09090b;
+  --color-foreground: #0f172a; /* Slate 900 for better readability */
 
   --color-card: #ffffff;
-  --color-card-foreground: #09090b;
+  --color-card-foreground: #0f172a;
 
   --color-popover: #ffffff;
-  --color-popover-foreground: #09090b;
+  --color-popover-foreground: #0f172a;
 
-  --color-primary: #18181b;
-  --color-primary-foreground: #fafafa;
+  /* Primary: Ocean Blue */
+  --color-primary: #0ea5e9; 
+  --color-primary-foreground: #ffffff;
 
-  --color-secondary: #f4f4f5;
-  --color-secondary-foreground: #18181b;
+  /* Secondary: Teal */
+  --color-secondary: #14b8a6;
+  --color-secondary-foreground: #ffffff;
 
-  --color-muted: #f4f4f5;
-  --color-muted-foreground: #71717a;
+  --color-muted: #f1f5f9; /* Slate 100 */
+  --color-muted-foreground: #64748b; /* Slate 500 */
 
-  --color-accent: #f4f4f5;
-  --color-accent-foreground: #18181b;
+  --color-accent: #f0f9ff; /* Sky 50 */
+  --color-accent-foreground: #0ea5e9;
 
   --color-destructive: #ef4444;
   --color-destructive-foreground: #fafafa;
 
-  --color-border: #e4e4e7;
-  --color-input: #e4e4e7;
-  --color-ring: #18181b;
+  --color-border: #e2e8f0; /* Slate 200 */
+  --color-input: #e2e8f0;
+  --color-ring: #0ea5e9;
 
   /* Smart Support Theme Colors */
   --color-smart-healthy: #e6f7eb;
@@ -39,14 +41,16 @@
   --color-smart-outdated-foreground: #ffc409;
   --color-smart-lost: #f3e5f5;
   --color-smart-lost-foreground: #7b1fa2;
-  --color-smart-total: #e3f2fd;
-  --color-smart-total-foreground: #1976d2;
+  --color-smart-total: #e0f2fe;
+  --color-smart-total-foreground: #0284c7;
 
   --radius-lg: 0.5rem;
   --radius-md: calc(0.5rem - 2px);
   --radius-sm: calc(0.5rem - 4px);
 
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  /* Typography: Montserrat (Headings) + Lato (Body) */
+  --font-sans: "Lato", system-ui, -apple-system, sans-serif;
+  --font-heading: "Montserrat", system-ui, -apple-system, sans-serif;
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
