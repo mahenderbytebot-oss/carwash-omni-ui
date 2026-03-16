@@ -1,67 +1,79 @@
 import React from 'react';
-import { IonIcon, IonCard, IonCardContent } from '@ionic/react';
+import { IonCard, IonCardContent } from '@ionic/react';
 import { clsx } from 'clsx';
-import { arrowUp, arrowDown } from 'ionicons/icons';
-// import { Card, CardContent } from './Card'; // Removed custom card import
+
+export type StatCardVariant = 'default' | 'healthy' | 'offline' | 'outdated' | 'lost' | 'total';
 
 export interface StatCardProps {
   title: string;
   value: string | number;
-  icon: string;
+  icon?: string;
   trend?: {
     value: number;
     direction: 'up' | 'down';
   };
   className?: string;
-  // keeping color prop but ignoring it for minimalist design or using it for icon color only
-  color?: string;
+  secondaryText?: React.ReactNode;
+  variant?: StatCardVariant;
   onClick?: () => void;
 }
+
+const variantStyles: Record<StatCardVariant, string> = {
+  default: 'bg-card text-card-foreground',
+  healthy: 'bg-[var(--color-smart-healthy)] text-[var(--color-smart-healthy-foreground)]',
+  offline: 'bg-[var(--color-smart-offline)] text-[var(--color-smart-offline-foreground)]',
+  outdated: 'bg-[var(--color-smart-outdated)] text-[var(--color-smart-outdated-foreground)]',
+  lost: 'bg-[var(--color-smart-lost)] text-[var(--color-smart-lost-foreground)]',
+  total: 'bg-[var(--color-smart-total)] text-[var(--color-smart-total-foreground)]',
+};
 
 /**
  * StatCard Component
  * 
- * A minimalist card for displaying key metrics and statistics.
+ * Styled to match "Smart Support" dashboard cards:
+ * - Central large number
+ * - Label below number
+ * - Specific background/text color themes
  */
 const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
-  icon,
-  trend,
+  secondaryText,
   className = '',
+  variant = 'default',
   onClick
 }) => {
   return (
     <IonCard 
       className={clsx(
-        "transition-all duration-200 hover:shadow-md m-0", 
-        onClick && "cursor-pointer hover:bg-accent/5",
+        "transition-all duration-200 hover:shadow-md m-0 border-none shadow-none", // Removed default border/shadow for colored cards
+        variantStyles[variant],
+        onClick && "cursor-pointer hover:opacity-90",
         className
       )}
       onClick={onClick}
     >
-      <IonCardContent className="p-6">
-        <div className="flex items-center justify-between space-y-0 pb-2">
-          <p className="ion-text-sm ion-font-medium text-muted-foreground">
-            {title}
-          </p>
-          <IonIcon 
-            icon={icon} 
-            className="text-muted-foreground h-4 w-4"
-          />
+      <IonCardContent className="p-4 flex flex-col items-center justify-center text-center h-full min-h-[100px]">
+        <div className="text-3xl font-bold mb-1 tracking-tight">
+          {value}
         </div>
-        <div className="flex items-center justify-between pt-2">
-          <div className="ion-text-2xl ion-font-bold">{value}</div>
-          {trend && (
-            <div className={clsx(
-              "ion-text-xs ion-font-medium flex items-center",
-              trend.direction === 'up' ? "text-green-500" : "text-red-500"
-            )}>
-              <IonIcon icon={trend.direction === 'up' ? arrowUp : arrowDown} className="mr-1 h-3 w-3" />
-              {Math.abs(trend.value)}%
-            </div>
-          )}
+        
+        <div className="text-sm font-medium opacity-90 uppercase tracking-wide">
+          {title}
         </div>
+
+        {secondaryText && (
+          <div className="mt-1 text-xs opacity-80 font-medium">
+            {secondaryText}
+          </div>
+        )}
+
+        {/* Icon (Optional/Subtle if needed, or hidden to match screenshot strictly) */}
+
+        {/* Icon (Optional/Subtle if needed, or hidden to match screenshot strictly) */}
+        {/* Screenshot does not show icons in cards, so we hide them or make them very subtle background elements if requested. 
+            For now, let's omit the icon from the main view to match the "clean number + text" look. 
+        */}
       </IonCardContent>
     </IonCard>
   );

@@ -14,8 +14,7 @@ import {
   IonFabButton,
   useIonAlert
 } from '@ionic/react';
-import { add, trash } from 'ionicons/icons';
-import { useHistory } from 'react-router-dom';
+import { trash, add } from 'ionicons/icons';
 import { useAuthStore } from '../../../store/authStore';
 import DashboardHeader from '../../../components/ui/DashboardHeader';
 import { getTeamMembers, addTeamMember, removeTeamMember } from '../../../services/teamService';
@@ -23,7 +22,6 @@ import type { TeamMember, CreateTeamMemberRequest } from '../../../services/team
 import CreateTeamMemberModal from '../../../components/team/CreateTeamMemberModal';
 
 const TeamList: React.FC = () => {
-  const history = useHistory();
   const { user, logout } = useAuthStore();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +31,7 @@ const TeamList: React.FC = () => {
   // Handle logout
   const handleLogout = () => {
     logout();
-    history.push('/login');
+    window.location.href = '/login';
   };
 
   const fetchTeam = async () => {

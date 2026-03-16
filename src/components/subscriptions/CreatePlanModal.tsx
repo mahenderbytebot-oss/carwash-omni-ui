@@ -31,6 +31,7 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onSu
     price: 0,
     durationDays: 30,
     washesPerWeek: 1,
+    waterWashes: 0,
     active: true
   });
 
@@ -57,6 +58,7 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onSu
         price: 0,
         durationDays: 30,
         washesPerWeek: 1,
+        waterWashes: 0,
         active: true
       });
     } catch (err: any) {
@@ -133,6 +135,16 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onSu
                 onIonChange={e => handleChange('washesPerWeek', parseInt(e.detail.value!, 10))} 
                 min="1"
                 required
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="stacked">Water Washes</IonLabel>
+              <IonInput 
+                type="number" 
+                value={formData.waterWashes} 
+                onIonChange={e => handleChange('waterWashes', parseInt(e.detail.value!, 10))} 
+                min="0"
               />
             </IonItem>
 

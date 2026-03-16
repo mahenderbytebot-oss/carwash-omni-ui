@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton as StandardIonButton, IonLoading, IonIcon } from '@ionic/react';
+import { IonPage, IonContent, IonLoading } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { 
-  peopleOutline, 
- 
- 
+  alertCircleOutline,
   calendarOutline,
-  closeOutline,
   personCircleOutline,
   timeOutline,
-  carSportOutline
+  peopleOutline
 } from 'ionicons/icons';
 import { useAuthStore } from '../../store/authStore';
 import DashboardHeader from '../../components/ui/DashboardHeader';
 import StatCard from '../../components/ui/StatCard';
 // Removed custom component imports
+import { searchSubscriptions } from '../../services/subscriptionService';
 import { getAllCustomers } from '../../services/customerService';
 import { getAllCleaners } from '../../services/cleanerService';
 import type { Cleaner } from '../../services/cleanerService';
@@ -35,12 +33,11 @@ const AdminDashboard: React.FC = () => {
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [todayWashes, setTodayWashes] = useState<WashRecord[]>([]);
   const [totalCustomers, setTotalCustomers] = useState<number>(0);
+  const [unassignedCount, setUnassignedCount] = useState<number>(0);
+  const [expiredCount, setExpiredCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   
-
-  
-  // Pending Washes Modal State
-  const [showPendingModal, setShowPendingModal] = useState(false);
+  // Pending Washes Modal State removed in favor of dedicated page
 
   // Handle logout
   const handleLogout = () => {
@@ -50,14 +47,18 @@ const AdminDashboard: React.FC = () => {
 
   const fetchData = async () => {
     try {
-        const [cleanersData, washesData, customersData] = await Promise.all([
+        const [cleanersData, washesData, customersData, unassignedData, expiredData] = await Promise.all([
             getAllCleaners(),
             getTodayWashes(),
-            getAllCustomers('', 1000)
+            getAllCustomers('', 1000),
+            searchSubscriptions('', 'ACTIVE', true, 0, 1),
+            searchSubscriptions('', 'EXPIRED', false, 0, 1)
         ]);
         setCleaners(cleanersData);
         setTodayWashes(washesData);
         setTotalCustomers(customersData.length);
+        setUnassignedCount(unassignedData.totalElements);
+        setExpiredCount(expiredData.totalElements);
     } catch (error) {
         console.error("Failed to fetch dashboard data", error);
     } finally {
@@ -107,30 +108,58 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Statistics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard
-                title="Total Washes Today"
-                value={stats.totalWashes}
-                icon={calendarOutline}
-              />
-              <StatCard
-                title="Pending Washes Today"
-                value={stats.pendingBookings}
-                icon={calendarOutline}
-                onClick={() => setShowPendingModal(true)}
-              />
-              <StatCard
-                title="Total Customers"
-                value={stats.totalCustomers}
-                icon={peopleOutline}
-                onClick={() => history.push('/admin/customers')}
-              />
-              <StatCard
-                title="Total Partners"
-                value={stats.totalPartners}
-                icon={personCircleOutline}
-                onClick={() => history.push('/admin/cleaners')}
-              />
+            {/* Action Required Section */}
+            <div>
+              <h3 className="text-lg font-medium text-muted-foreground mb-3 px-1">Action Required</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                <StatCard
+                  title="Unassigned Subscriptions"
+                  value={unassignedCount}
+                  icon={alertCircleOutline}
+                  onClick={() => history.push('/admin/subscription-management?unassigned=true')}
+                  variant="outdated"
+                />
+                <StatCard
+                  title="Expired Subscriptions"
+                  value={expiredCount}
+                  icon={timeOutline}
+                  onClick={() => history.push('/admin/subscription-management?status=EXPIRED')}
+                  variant="offline"
+                />
+                <StatCard
+                  title="Daily Washes"
+                  value={stats.totalWashes}
+                  secondaryText={
+                    <span className={stats.pendingBookings > 0 ? "text-red-500 font-bold" : ""}>
+                      {stats.pendingBookings} Pending
+                    </span>
+                  }
+                  icon={calendarOutline}
+                  onClick={() => history.push('/admin/daily-washes')}
+                  variant="total"
+                />
+              </div>
+            </div>
+
+            {/* Platform Overview Section */}
+            <div>
+              <h3 className="text-lg font-medium text-muted-foreground mb-3 px-1">Platform Overview</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                <StatCard
+                  title="Total Customers"
+                  value={stats.totalCustomers}
+                  icon={peopleOutline}
+                  onClick={() => history.push('/admin/customers')}
+                  variant="healthy" // Green for good
+                />
+                <StatCard
+                  title="Total Partners"
+                  value={stats.totalPartners}
+                  icon={personCircleOutline}
+                  onClick={() => history.push('/admin/cleaners')}
+                  variant="outdated" // Orange/Warning for distinction
+                />
+              </div>
             </div>
 
 
@@ -147,75 +176,6 @@ const AdminDashboard: React.FC = () => {
         <IonLoading isOpen={loading} message="Loading dashboard..." />
 
       </IonContent>
-
-      {/* Pending Washes Modal */}
-      <IonModal isOpen={showPendingModal} onDidDismiss={() => setShowPendingModal(false)}>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle className="pl-4">Pending Washes Today</IonTitle>
-            <IonButtons slot="end">
-              <StandardIonButton onClick={() => setShowPendingModal(false)}>
-                <IonIcon icon={closeOutline} />
-              </StandardIonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent>
-          <div className="p-4 space-y-6">
-            {Object.entries(
-              (todayWashes || [])
-                .filter(w => w.status === 'SCHEDULED' || w.status === 'ASSIGNED')
-                .reduce((acc, wash) => {
-                  const cleanerName = wash.cleaner?.name || 'Unassigned';
-                  if (!acc[cleanerName]) acc[cleanerName] = [];
-                  acc[cleanerName].push(wash);
-                  return acc;
-                }, {} as Record<string, typeof todayWashes>)
-            ).map(([cleanerName, washes]) => (
-              <div key={cleanerName} className="space-y-2">
-                <div className="flex items-center gap-2 bg-muted/30 p-2 rounded-md">
-                   <IonIcon icon={personCircleOutline} className="text-xl text-primary" />
-                   <h3 className="font-semibold text-lg">{cleanerName}</h3>
-                   <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
-                     {washes.length}
-                   </span>
-                </div>
-                <div className="grid gap-2 pl-2">
-                  {washes.map(wash => (
-                    <div key={wash.id} className="border rounded-md p-3 flex justify-between items-center bg-card">
-                      <div>
-                        <div className="flex items-center gap-2 font-medium">
-                          <IonIcon icon={carSportOutline} className="text-muted-foreground" />
-                          {wash.vehicle.make} {wash.vehicle.model}
-                        </div>
-                        <div className="text-sm text-muted-foreground ml-6">
-                           {wash.vehicle.registrationNumber}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 ml-6">
-                           <IonIcon icon={timeOutline} className="text-[10px]" />
-                           {new Date(wash.scheduledDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                           {wash.customer?.name && ` • ${wash.customer.name}`}
-                        </div>
-                      </div>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        wash.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {wash.status}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            {(todayWashes || []).filter(w => w.status === 'SCHEDULED' || w.status === 'ASSIGNED').length === 0 && (
-               <div className="text-center py-10 text-muted-foreground">
-                 <p>No pending washes for today.</p>
-               </div>
-            )}
-          </div>
-        </IonContent>
-      </IonModal>
 
     </IonPage>
   );

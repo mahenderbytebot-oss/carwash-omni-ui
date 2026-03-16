@@ -11,11 +11,11 @@
   --color-popover: #ffffff;
   --color-popover-foreground: #0f172a;
 
-  /* Primary: Ocean Blue */
-  --color-primary: #0ea5e9; 
+  /* Primary: Smart Support Blue */
+  --color-primary: #1a73e8; 
   --color-primary-foreground: #ffffff;
 
-  /* Secondary: Teal */
+  /* Secondary: Teal (Keep or Update?) - Let's keep for now */
   --color-secondary: #14b8a6;
   --color-secondary-foreground: #ffffff;
 
@@ -30,19 +30,19 @@
 
   --color-border: #e2e8f0; /* Slate 200 */
   --color-input: #e2e8f0;
-  --color-ring: #0ea5e9;
+  --color-ring: #1a73e8;
 
-  /* Smart Support Theme Colors */
-  --color-smart-healthy: #e6f7eb;
-  --color-smart-healthy-foreground: #28ba62;
-  --color-smart-offline: #fce8e9;
-  --color-smart-offline-foreground: #eb445a;
-  --color-smart-outdated: #fff6e6;
-  --color-smart-outdated-foreground: #ffc409;
-  --color-smart-lost: #f3e5f5;
-  --color-smart-lost-foreground: #7b1fa2;
-  --color-smart-total: #e0f2fe;
-  --color-smart-total-foreground: #0284c7;
+  /* Smart Support Theme Colors - Extracted from Screenshot */
+  --color-smart-healthy: #e6f4ea; /* Pastel Green */
+  --color-smart-healthy-foreground: #1e8e3e; /* Strong Green */
+  --color-smart-offline: #fce8e6; /* Pastel Red */
+  --color-smart-offline-foreground: #d93025; /* Strong Red */
+  --color-smart-outdated: #fef7e0; /* Pastel Yellow/Orange */
+  --color-smart-outdated-foreground: #e37400; /* Strong Orange */
+  --color-smart-lost: #f3e8fd; /* Pastel Purple */
+  --color-smart-lost-foreground: #9334e6; /* Strong Purple */
+  --color-smart-total: #e8f0fe; /* Pastel Blue */
+  --color-smart-total-foreground: #1967d2; /* Strong Blue */
 
   --radius-lg: 0.5rem;
   --radius-md: calc(0.5rem - 2px);
@@ -87,6 +87,51 @@
 ion-content {
   --background: var(--color-background);
   --color: var(--color-foreground);
+}
+
+/* Global Card Styling - Flat with Soft Border */
+/* Global Card Styling - Flat with Soft Border */
+ion-card {
+  --background: var(--color-card);
+  --color: var(--color-card-foreground);
+  
+  /* Force override of any default ionic shadows */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important; 
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: var(--radius-lg);
+  overflow: visible !important; /* Sometimes needed for shadows */
+}
+
+/* Identical soft card style for non-IonCard elements (like divs) */
+.soft-card {
+  --background: var(--color-card);
+  --color: var(--color-card-foreground);
+  background-color: var(--background);
+  color: var(--color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: var(--radius-lg);
+}
+
+/* Soft Searchbar Styling */
+ion-searchbar {
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  --border-radius: var(--radius-lg);
+  --background: #ffffff;
+  padding-start: 1rem;
+  padding-end: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Target the inner input container using Shadow DOM part */
+ion-searchbar::part(container) {
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: var(--radius-lg);
+  background: #ffffff;
+  box-shadow: none !important; /* Ensure inner container doesn't have double shadow */
 }
 
 ion-item {

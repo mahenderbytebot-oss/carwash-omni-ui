@@ -40,7 +40,10 @@ import { getCustomerById, type Customer } from '../../../services/customerServic
 import { deleteVehicle } from '../../../services/vehicleService';
 
 import AddVehicleModal from '../../../components/customers/AddVehicleModal';
+import EditVehicleModal from '../../../components/customers/EditVehicleModal';
 import AddSubscriptionModal from '../../../components/customers/AddSubscriptionModal';
+import EditSubscriptionModal from '../../../components/customers/EditSubscriptionModal';
+import type { Vehicle, Subscription } from '../../../services/customerService';
 
 const CustomerDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -58,8 +61,12 @@ const CustomerDetails: React.FC = () => {
   
   // Modal states
   const [isAddVehicleOpen, setIsAddVehicleOpen] = useState(false);
+  const [isEditVehicleOpen, setIsEditVehicleOpen] = useState(false);
   const [isAddSubscriptionOpen, setIsAddSubscriptionOpen] = useState(false);
+  const [isEditSubscriptionOpen, setIsEditSubscriptionOpen] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+  const [vehicleToEdit, setVehicleToEdit] = useState<Vehicle | null>(null);
+  const [subscriptionToEdit, setSubscriptionToEdit] = useState<Subscription | null>(null);
   
   const [presentAlert] = useIonAlert();
   const [presentToast] = useIonToast();
@@ -162,6 +169,17 @@ const CustomerDetails: React.FC = () => {
   const handleOpenAddSubscription = (vehicleId: string) => {
     setSelectedVehicleId(vehicleId);
     setIsAddSubscriptionOpen(true);
+  };
+
+  const handleOpenEditVehicle = (vehicle: Vehicle) => {
+    // Cast to Vehicle type if needed or ensure types match
+    setVehicleToEdit(vehicle);
+    setIsEditVehicleOpen(true);
+  };
+
+  const handleOpenEditSubscription = (subscription: Subscription) => {
+    setSubscriptionToEdit(subscription);
+    setIsEditSubscriptionOpen(true);
   };
 
   if (loading) {
@@ -280,6 +298,12 @@ const CustomerDetails: React.FC = () => {
                                         <div className="ion-text-sm text-muted-foreground space-y-1">
                                             {vehicle.color && <p>Color: {vehicle.color}</p>}
                                             <p className="font-mono bg-muted inline-block px-2 py-0.5 rounded ion-text-xs">{vehicle.registrationNumber}</p>
+                                            {/* Display Parking Location if available */}
+                                            {vehicle.parkingLocation && (
+                                              <p className="text-xs text-muted-foreground mt-1">
+                                                <strong>Parking:</strong> {vehicle.parkingLocation}
+                                              </p>
+                                            )}
                                         </div>
                                     </div>
                                     </div>
@@ -297,9 +321,21 @@ const CustomerDetails: React.FC = () => {
                                             </div>
                                             {sub.scheduledDays && sub.scheduledDays.length > 0 && (
                                                 <div className="ion-text-xs text-muted-foreground mt-1">
-                                                    Days: {sub.scheduledDays.map(d => d.substring(0, 3)).join(', ')}
+                                                    Days: {sub.scheduledDays.map((d: string) => d.substring(0, 3)).join(', ')}
                                                 </div>
                                             )}
+                                            <div className="mt-2">
+                                                <IonButton 
+                                                    fill="outline" 
+                                                    size="small"
+                                                    color="primary"
+                                                    expand="block"
+                                                    onClick={() => handleOpenEditSubscription(sub)}
+                                                >
+                                                    <IonIcon icon={createOutline} slot="start" />
+                                                    Change Plan
+                                                </IonButton>
+                                            </div>
                                             </div>
                                         ))
                                         ) : (
@@ -314,6 +350,17 @@ const CustomerDetails: React.FC = () => {
                                         </IonButton>
                                         )}
                                         
+                                        <IonButton 
+                                          fill="outline"
+                                          size="small"
+                                          color="medium"
+                                          expand="block"
+                                          onClick={() => handleOpenEditVehicle(vehicle)}
+                                        >
+                                          <IonIcon icon={createOutline} slot="start" />
+                                          Edit Vehicle
+                                        </IonButton>
+
                                         <IonButton 
                                         fill="clear"
                                         size="small"
@@ -419,6 +466,20 @@ const CustomerDetails: React.FC = () => {
               isOpen={isAddSubscriptionOpen}
               vehicleId={selectedVehicleId}
               onClose={() => setIsAddSubscriptionOpen(false)}
+              onSuccess={fetchCustomerDetails}
+            />
+
+            <EditSubscriptionModal
+              isOpen={isEditSubscriptionOpen}
+              subscription={subscriptionToEdit}
+              onClose={() => setIsEditSubscriptionOpen(false)}
+              onSuccess={fetchCustomerDetails}
+            />
+            
+            <EditVehicleModal 
+              isOpen={isEditVehicleOpen}
+              vehicle={vehicleToEdit}
+              onClose={() => setIsEditVehicleOpen(false)}
               onSuccess={fetchCustomerDetails}
             />
           </div>

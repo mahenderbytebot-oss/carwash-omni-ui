@@ -55,6 +55,13 @@ const CreateSubscriptionWizard: React.FC<CreateSubscriptionWizardProps> = ({ isO
   // Search
   const [searchText, setSearchText] = useState<string>('');
 
+  // Payment State
+  const [discount, setDiscount] = useState<number>(0);
+  const [paymentStatus, setPaymentStatus] = useState<string>('PENDING');
+  const [paymentMode, setPaymentMode] = useState<string>('CASH');
+  const [onlinePaymentType, setOnlinePaymentType] = useState<string>('');
+  const [paymentReference, setPaymentReference] = useState<string>('');
+
 
 
   useEffect(() => {
@@ -84,6 +91,11 @@ const CreateSubscriptionWizard: React.FC<CreateSubscriptionWizardProps> = ({ isO
     setSelectedDays([]);
     setError(null);
     setSearchText('');
+    setDiscount(0);
+    setPaymentStatus('PENDING');
+    setPaymentMode('CASH');
+    setOnlinePaymentType('');
+    setPaymentReference('');
   };
 
   const fetchCustomers = async (query: string) => {
@@ -141,17 +153,41 @@ const CreateSubscriptionWizard: React.FC<CreateSubscriptionWizardProps> = ({ isO
          // rough check, ideally washesPerWeek should be in Plan interface
     }
 
+    // Validate Discount using plan price
+    const selectedPlan = plans.find(p => p.id === selectedPlanId);
+    if (selectedPlan) {
+      const maxDiscount = selectedPlan.price * 0.10;
+      if (discount > maxDiscount) {
+        setError(`Discount cannot exceed 10% (₹${maxDiscount.toFixed(2)})`);
+        return;
+      }
+    }
+
+    if (paymentMode === 'ONLINE' && !onlinePaymentType) {
+        setError('Please select an online payment type');
+        return;
+    }
+
     try {
       setLoading(true);
       await addSubscription(selectedVehicleId, {
         planId: selectedPlanId,
         startDate,
-        scheduledDays: selectedDays.length > 0 ? selectedDays : undefined
+        scheduledDays: selectedDays.length > 0 ? selectedDays : undefined,
+        discount,
+        paymentStatus,
+        paymentMode,
+        onlinePaymentType: paymentMode === 'ONLINE' ? onlinePaymentType : undefined,
+        paymentReference: paymentMode === 'ONLINE' ? paymentReference : undefined
       });
       onSuccess();
       onClose();
     } catch (err) {
-      setError((err as any).message || 'Failed to create subscription');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to create subscription');
+      }
     } finally {
       setLoading(false);
     }
@@ -236,9 +272,9 @@ const CreateSubscriptionWizard: React.FC<CreateSubscriptionWizardProps> = ({ isO
               onChange={(e) => setSelectedPlanId(e.target.value)}
             >
               <option value="">Select a plan...</option>
-              {plans.map(p => (
+              {plans.filter(p => p.active !== false).map(p => (
                 <option key={p.id} value={p.id}>
-                  {p.name} - ₹{p.price}
+                  {p.name} - ₹{p.price} {p.waterWashes ? `(${p.waterWashes} Water Washes)` : ''}
                 </option>
               ))}
             </select>
@@ -274,6 +310,92 @@ const CreateSubscriptionWizard: React.FC<CreateSubscriptionWizardProps> = ({ isO
            </div>
            <p className="ion-text-xs text-muted-foreground mt-1">Select prefered wash days</p>
         </div>
+
+         {/* Payment Section */}
+         {selectedPlanId && (
+            <div className="border-t pt-4 space-y-4">
+                <h4 className="ion-font-semibold ion-text-sm">Payment Details</h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="ion-text-sm ion-font-medium mb-1.5 block">Price</label>
+                         <div className="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 ion-text-sm">
+                            ₹{plans.find(p => p.id === selectedPlanId)?.price || 0}
+                         </div>
+                    </div>
+                    <div>
+                        <label className="ion-text-sm ion-font-medium mb-1.5 block">Discount</label>
+                        <input
+                            type="number"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 ion-text-sm"
+                            value={discount}
+                            onChange={(e) => setDiscount(Number(e.target.value))}
+                            min="0"
+                        />
+                    </div>
+                </div>
+
+                <div className="bg-muted/30 p-3 rounded text-right">
+                    <span className="ion-text-sm text-muted-foreground mr-2">Effective Price:</span>
+                    <span className="ion-font-bold ion-text-lg">
+                        ₹{Math.max(0, (plans.find(p => p.id === selectedPlanId)?.price || 0) - discount).toFixed(2)}
+                    </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                     <div>
+                        <label className="ion-text-sm ion-font-medium mb-1.5 block">Status</label>
+                        <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 ion-text-sm"
+                            value={paymentStatus}
+                            onChange={(e) => setPaymentStatus(e.target.value)}
+                        >
+                            <option value="PENDING">Pending</option>
+                            <option value="PAID">Paid</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label className="ion-text-sm ion-font-medium mb-1.5 block">Mode</label>
+                        <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 ion-text-sm"
+                            value={paymentMode}
+                            onChange={(e) => setPaymentMode(e.target.value)}
+                        >
+                            <option value="CASH">Cash</option>
+                            <option value="ONLINE">Online</option>
+                        </select>
+                    </div>
+                </div>
+
+                {paymentMode === 'ONLINE' && (
+                    <div className="space-y-4 pt-2 border-t">
+                         <div>
+                            <label className="ion-text-sm ion-font-medium mb-1.5 block">Online Type</label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 ion-text-sm"
+                                value={onlinePaymentType}
+                                onChange={(e) => setOnlinePaymentType(e.target.value)}
+                            >
+                                <option value="">Select Type</option>
+                                <option value="UPI">UPI</option>
+                                <option value="CARD">Card</option>
+                                <option value="NETBANKING">Netbanking</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="ion-text-sm ion-font-medium mb-1.5 block">Reference No</label>
+                            <input
+                                type="text"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 ion-text-sm"
+                                value={paymentReference}
+                                onChange={(e) => setPaymentReference(e.target.value)}
+                                placeholder="Txn Ref No"
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+         )}
       </div>
 
        {error && <div className="text-destructive ion-text-sm">{error}</div>}

@@ -25,10 +25,16 @@ import type { Vehicle } from '../../services/customerService';
 import { useIonViewWillEnter } from '@ionic/react';
 import { format } from 'date-fns';
 
+import AddVehicleModal from '../../components/customers/AddVehicleModal';
+import EditVehicleModal from '../../components/customers/EditVehicleModal';
+
 const MyCars: React.FC = () => {
   const { user, logout } = useAuthStore();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
   const handleLogout = () => {
     logout();
@@ -61,6 +67,11 @@ const MyCars: React.FC = () => {
     event.detail.complete();
   };
 
+  const handleEditClick = (vehicle: Vehicle) => {
+    setSelectedVehicle(vehicle);
+    setShowEditModal(true);
+  };
+
   const getActiveSubscription = (vehicle: Vehicle) => {
     if (!vehicle.subscriptions || vehicle.subscriptions.length === 0) return null;
     return vehicle.subscriptions.find(sub => sub.active === true || sub.status === 'ACTIVE');
@@ -69,7 +80,7 @@ const MyCars: React.FC = () => {
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'MMM d, yyyy');
-    } catch (error) {
+    } catch {
       return dateString;
     }
   };
@@ -95,7 +106,7 @@ const MyCars: React.FC = () => {
                 <h2 className="text-2xl font-bold tracking-tight">My Vehicles</h2>
                 <p className="text-muted-foreground">Manage your cars and subscriptions</p>
               </div>
-              <IonButton routerLink="/customer/vehicles/add" size="small">
+              <IonButton onClick={() => setShowAddModal(true)} size="small">
                 <IonIcon slot="start" icon={addCircleOutline} />
                 Add Car
               </IonButton>
@@ -122,8 +133,24 @@ const MyCars: React.FC = () => {
                                 {vehicle.registrationNumber}
                               </p>
                               {vehicle.color && <p className="text-xs text-muted-foreground mt-1 capitalize">{vehicle.color}</p>}
+                              {/* Display Parking Location if available (assuming backend returns it, though Vehicle type might need update) */}
+                              {vehicle.parkingLocation && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  <strong>Parking:</strong> {vehicle.parkingLocation}
+                                </p>
+                              )}
                             </div>
                           </div>
+                          
+                          {/* Edit Button */}
+                          <IonButton 
+                             fill="clear" 
+                             size="small" 
+                             color="medium"
+                             onClick={() => handleEditClick(vehicle)}
+                          >
+                             Edit
+                          </IonButton>
                         </div>
 
                         <div className="border-t pt-4 mt-2">
@@ -185,7 +212,7 @@ const MyCars: React.FC = () => {
                 <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
                   Add your first vehicle to start booking services and managing subscriptions.
                 </p>
-                <IonButton routerLink="/customer/vehicles/add">
+                <IonButton onClick={() => setShowAddModal(true)}>
                   <IonIcon slot="start" icon={addCircleOutline} />
                   Add New Vehicle
                 </IonButton>
@@ -193,6 +220,20 @@ const MyCars: React.FC = () => {
             )}
           </div>
         </div>
+
+        <AddVehicleModal
+          isOpen={showAddModal}
+          customerId={user?.customerId || ''}
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => loadVehicles()}
+        />
+
+        <EditVehicleModal
+            isOpen={showEditModal}
+            vehicle={selectedVehicle}
+            onClose={() => setShowEditModal(false)}
+            onSuccess={() => loadVehicles()}
+        />
       </IonContent>
     </IonPage>
   );

@@ -7,7 +7,6 @@ import {
   IonCard, 
   IonCardHeader,
   IonCardTitle,
-  IonCardSubtitle,
   IonCardContent,
   IonBadge,
   IonIcon,
@@ -124,7 +123,7 @@ const PartnerHistory: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    window.location.replace('/login');
+    window.location.href = '/login';
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -138,6 +137,15 @@ const PartnerHistory: React.FC = () => {
       case 'MISSED': return 'danger';
       default: return 'medium';
     }
+  };
+
+  const formatStatus = (status: string) => {
+    return status
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   return (
@@ -178,13 +186,19 @@ const PartnerHistory: React.FC = () => {
            <div className="space-y-4">
                {washes.map(wash => (
                    <IonCard key={wash.id} className="ion-no-margin">
-                       <IonCardHeader>
-                           <div className="flex justify-between">
-                               <div>
-                                   <IonCardSubtitle>{wash.planName || 'Wash'}</IonCardSubtitle>
-                                   <IonCardTitle className="text-lg">{wash.customerName}</IonCardTitle>
+                       <IonCardHeader className="ion-padding-top ion-padding-horizontal">
+                           <div className="flex justify-between items-start w-full gap-2">
+                               <div className="flex-1">
+                                   <IonText color="medium">
+                                       <h3 className="ion-no-margin" style={{ fontSize: '0.9rem' }}>{wash.planName || 'Wash Service'}</h3>
+                                   </IonText>
+                                   <IonCardTitle className="ion-margin-top" style={{ fontSize: '1.25rem' }}>{wash.customerName}</IonCardTitle>
                                </div>
-                               <IonBadge color={getStatusBadgeColor(wash.status)}>{wash.status}</IonBadge>
+                               <div className="flex-shrink-0">
+                                   <IonBadge color={getStatusBadgeColor(wash.status)} className="ion-padding-horizontal py-1">
+                                       {formatStatus(wash.status)}
+                                   </IonBadge>
+                               </div>
                            </div>
                        </IonCardHeader>
                        <IonCardContent>

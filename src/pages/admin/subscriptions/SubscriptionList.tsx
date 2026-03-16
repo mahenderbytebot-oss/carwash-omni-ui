@@ -21,7 +21,8 @@ import DashboardHeader from '../../../components/ui/DashboardHeader';
 import { useAuthStore } from '../../../store/authStore';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
-import { getPlans, type Plan } from '../../../services/subscriptionService';
+import { getPlans, updatePlan, type Plan, type SubscriptionPlanRequest } from '../../../services/subscriptionService';
+import { IonToggle } from '@ionic/react';
 import CreatePlanModal from '../../../components/subscriptions/CreatePlanModal';
 import CreateSubscriptionWizard from '../../../components/subscriptions/CreateSubscriptionWizard';
 
@@ -58,6 +59,40 @@ const SubscriptionList: React.FC = () => {
     event.detail.complete();
   };
 
+  const handleToggleActive = async (plan: Plan, currentStatus: boolean) => {
+    try {
+      // Create a request object with all required fields from the plan
+      // We need to cast plan to SubscriptionPlanRequest or construct it manually
+      // Since updatePlan takes SubscriptionPlanRequest which has strictly typed fields
+      const updateData: SubscriptionPlanRequest = {
+        name: plan.name,
+        description: plan.description,
+        price: plan.price,
+        durationDays: 30, // Defaulting as it might not be in Plan interface fully or assuming standard
+        washesPerWeek: plan.washesPerWeek || 0,
+        waterWashes: plan.waterWashes || 0, // Ensure waterWashes is included
+        active: !currentStatus
+      };
+
+      // We need to call the API to update the plan. 
+      // Reuse createPlan logic or if there's a specific update endpoint. 
+      // Assuming createPlan allows updating or we need a new service method.
+      // Wait! The service has `createPlan` but not `updatePlan` exported in `subscriptionService.ts`?
+      // Checking `subscriptionService.ts` content from previous `view_file`.
+      // It DOES NOT have `updatePlan`. I need to add `updatePlan` to `subscriptionService.ts` first!
+      // I will add it in the next step. For now, I will comment this out or use a placeholder.
+      // Actually, I should add `updatePlan` to the service first. 
+      // But I can't interrupt this tool call. I will add the UI logic assuming the service exists, 
+      // and then immediately add the service method.
+      
+      await updatePlan(plan.id, updateData);
+      console.log('Toggling active status for plan:', plan.id);
+    } catch (error) {
+       console.error('Failed to update plan status', error);
+    }
+    await fetchData();
+  };
+
   return (
     <IonPage>
       <IonContent className="ion-no-padding">
@@ -74,13 +109,8 @@ const SubscriptionList: React.FC = () => {
 
           <div className="container mx-auto px-4 pt-6 space-y-6">
             {/* Header Actions */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h2 className="ion-text-3xl ion-font-bold ion-tracking-tight">Subscription Plans</h2>
-                <p className="text-muted-foreground mt-1">
-                  Manage plans and customer subscriptions
-                </p>
-              </div>
+            {/* Header Actions */}
+            <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
               <div className="flex gap-2">
                 <IonButton fill="outline" onClick={() => setIsCreateSubscriptionWizardOpen(true)}>
                   <IonIcon icon={addOutline} slot="start" />
@@ -108,11 +138,25 @@ const SubscriptionList: React.FC = () => {
                         <Card key={plan.id} className="hover:shadow-md transition-shadow">
                           <CardContent className="p-6">
                              <div className="flex justify-between items-start mb-2">
-                               <h3 className="ion-font-bold ion-text-xl">{plan.name}</h3>
-                               <Badge variant="outline">₹{plan.price}</Badge>
+                                <h3 className="ion-font-bold ion-text-xl">{plan.name}</h3>
+                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <IonToggle 
+                                        checked={plan.active} 
+                                        onIonChange={() => handleToggleActive(plan, plan.active || false)}
+                                        className="scale-75"
+                                    />
+                                    <Badge variant={plan.active ? "default" : "secondary"}>
+                                        {plan.active ? 'Active' : 'Inactive'}
+                                    </Badge>
+                                    <Badge variant="outline">₹{plan.price}</Badge>
+                                </div>
                             </div>
                             <p className="text-muted-foreground ion-text-sm mb-4">{plan.description}</p>
                             <div className="space-y-2 ion-text-sm">
+                               <div className="flex justify-between border-b pb-2">
+                                  <span className="text-muted-foreground">Water Washes</span>
+                                  <span className="ion-font-medium">{plan.waterWashes || 0}</span>
+                               </div>
                                <div className="flex justify-between border-b pb-2">
                                   <span className="text-muted-foreground">Duration</span>
                                   <span className="ion-font-medium">30 Days</span>

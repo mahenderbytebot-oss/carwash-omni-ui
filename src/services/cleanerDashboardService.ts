@@ -5,6 +5,12 @@
  */
 
 import apiClient from './apiClient';
+import { 
+  cacheAssignments, 
+  getCachedAssignments, 
+  updateCachedAssignmentStatus, 
+  addToSyncQueue 
+} from './offlineSyncService';
 
 export interface WashAssignment {
   id: number;
@@ -43,8 +49,16 @@ interface ApiWrapper<T> {
 export const getAssignedWashes = async (): Promise<WashAssignment[]> => {
   try {
     const response = await apiClient.get<ApiWrapper<WashAssignment[]>>('/api/cleaner/washes/assigned');
-    return response.data.body || [];
-  } catch (error) {
+    const washes = response.data.body || [];
+    // Cache successfully fetched washes for offline use
+    await cacheAssignments(washes);
+    return washes;
+  } catch (error: unknown) {
+    if (error instanceof Error && !('response' in error)) {
+      // Network error / offline
+      console.warn('Network error: Falling back to cached assignments', error);
+      return await getCachedAssignments();
+    }
     console.error('Error fetching assigned washes:', error);
     throw error;
   }
@@ -70,7 +84,7 @@ export const getWashHistory = async (
   size: number = 10
 ): Promise<Page<WashAssignment>> => {
   try {
-    const params: any = { page, size };
+    const params: Record<string, unknown> = { page, size };
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
     if (status) params.status = status;
@@ -113,7 +127,20 @@ export const updateWashStatus = async (
       );
       return response.data.body;
     }
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof Error && !('response' in error)) {
+       console.warn('Network error during status update, queuing for offline sync.', error);
+       await addToSyncQueue(washId, status, notes, photos);
+       await updateCachedAssignmentStatus(washId, status, notes);
+       // Return optimistic response
+       return {
+         id: washId,
+         subscriptionId: 0, // Mock id
+         scheduledDateTime: '',
+         status: status,
+         notes: notes
+       };
+    }
     console.error('Error updating wash status:', error);
     throw error;
   }

@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 
 export interface DashboardHeaderProps {
   title: string;
+  subtitle?: string;
   userName: string;
   userRole: string;
   onLogout: () => void;
@@ -15,6 +16,7 @@ export interface DashboardHeaderProps {
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   title,
+  subtitle,
   userName,
   userRole,
   onLogout,
@@ -29,12 +31,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         className
       )}
     >
-      <div className="container flex h-14 items-center justify-between px-4 sm:px-8">
+      <div className="container flex h-16 items-center justify-between px-4 sm:px-8">
         <div className="flex items-center gap-4">
-          <IonButtons slot="start">
+          <IonButtons slot="start" className="md:hidden">
             <IonMenuButton />
           </IonButtons>
-          <h1 className="ion-text-xl ion-font-bold ion-tracking-tight">{title}</h1>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold tracking-tight leading-none">{title}</h1>
+            {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+          </div>
         </div>
 
         <div className="flex items-center gap-4">

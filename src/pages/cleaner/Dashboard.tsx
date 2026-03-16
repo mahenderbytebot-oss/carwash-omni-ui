@@ -11,7 +11,6 @@ import {
   IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonCardSubtitle,
   IonBadge,
   IonText,
   IonNote,
@@ -34,11 +33,14 @@ import {
 } from 'ionicons/icons';
 import { useAuthStore } from '../../store/authStore';
 import DashboardHeader from '../../components/ui/DashboardHeader';
+import { Network } from '@capacitor/network';
+import type { PluginListenerHandle } from '@capacitor/core';
 import { 
   getAssignedWashes, 
   updateWashStatus, 
   type WashAssignment 
 } from '../../services/cleanerDashboardService';
+import { processSyncQueue } from '../../services/offlineSyncService';
 
 /**
  * Partner Dashboard Component
@@ -53,7 +55,9 @@ const PartnerDashboard: React.FC = () => {
   const [updating, setUpdating] = useState<number | null>(null);
   const [fileMap, setFileMap] = useState<Record<number, File[]>>({});
   const [toastMessage, setToastMessage] = useState('');
-  const [toastColor, setToastColor] = useState<'success' | 'danger'>('success');
+  const [toastColor, setToastColor] = useState<'success' | 'danger' | 'warning'>('success');
+  const [isOffline, setIsOffline] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'pending' | 'inProgress' | 'completed' | 'total'>('pending');
 
   const handleLogout = () => {
     logout();
@@ -75,6 +79,41 @@ const PartnerDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchAssignments();
+
+    let networkListener: PluginListenerHandle;
+
+    const setupNetwork = async () => {
+      // Check initial status
+      const status = await Network.getStatus();
+      setIsOffline(!status.connected);
+
+      // Listen for network changes
+      networkListener = await Network.addListener('networkStatusChange', async (status) => {
+        setIsOffline(!status.connected);
+        
+        if (status.connected) {
+          setToastMessage('Back online. Syncing changes...');
+          setToastColor('success');
+          try {
+            await processSyncQueue();
+            await fetchAssignments(); // refresh after sync
+          } catch (e) {
+            console.error('Failed to sync queue', e);
+          }
+        } else {
+          setToastMessage('You are offline. Changes will be saved locally.');
+          setToastColor('warning');
+        }
+      });
+    };
+
+    setupNetwork();
+
+    return () => {
+      if (networkListener) {
+        networkListener.remove();
+      }
+    };
   }, []);
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
@@ -86,8 +125,8 @@ const PartnerDashboard: React.FC = () => {
     setUpdating(washId);
     try {
       await updateWashStatus(washId, 'IN_PROGRESS');
-      setToastMessage('Task started!');
-      setToastColor('success');
+      setToastMessage(isOffline ? 'Task started locally' : 'Task started!');
+      setToastColor(isOffline ? 'warning' : 'success');
       await fetchAssignments();
     } catch {
       setToastMessage('Failed to start task');
@@ -109,8 +148,8 @@ const PartnerDashboard: React.FC = () => {
     try {
       const photos = fileMap[washId];
       await updateWashStatus(washId, 'COMPLETED', undefined, photos);
-      setToastMessage('Task completed!');
-      setToastColor('success');
+      setToastMessage(isOffline ? 'Task completed locally' : 'Task completed!');
+      setToastColor(isOffline ? 'warning' : 'success');
       // Clear files
       setFileMap(prev => {
         const newMap = { ...prev };
@@ -130,8 +169,8 @@ const PartnerDashboard: React.FC = () => {
     setUpdating(washId);
     try {
       await updateWashStatus(washId, 'VEHICLE_NOT_AVAILABLE', 'Vehicle not at parking location');
-      setToastMessage('Marked as vehicle not available');
-      setToastColor('success');
+      setToastMessage(isOffline ? 'Marked as vehicle not available locally' : 'Marked as vehicle not available');
+      setToastColor(isOffline ? 'warning' : 'success');
       await fetchAssignments();
     } catch {
       setToastMessage('Failed to update status');
@@ -144,10 +183,18 @@ const PartnerDashboard: React.FC = () => {
   // Calculate task statistics
   const stats = {
     total: assignments.length,
-    completed: assignments.filter(a => a.status === 'COMPLETED').length,
+    completed: assignments.filter(a => ['COMPLETED', 'VERIFIED', 'VEHICLE_NOT_AVAILABLE', 'MISSED'].includes(a.status)).length,
     inProgress: assignments.filter(a => a.status === 'IN_PROGRESS').length,
     pending: assignments.filter(a => a.status === 'SCHEDULED' || a.status === 'ASSIGNED').length
   };
+
+  const filteredAssignments = assignments.filter(a => {
+    if (activeFilter === 'total') return true;
+    if (activeFilter === 'pending') return ['SCHEDULED', 'ASSIGNED'].includes(a.status);
+    if (activeFilter === 'inProgress') return a.status === 'IN_PROGRESS';
+    if (activeFilter === 'completed') return ['COMPLETED', 'VERIFIED', 'VEHICLE_NOT_AVAILABLE', 'MISSED'].includes(a.status);
+    return true;
+  });
 
   const getStatusBadgeColor = (status: string): 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'medium' => {
     switch (status) {
@@ -171,7 +218,12 @@ const PartnerDashboard: React.FC = () => {
   };
 
   const formatStatus = (status: string) => {
-    return status.replace('_', ' ').toLowerCase();
+    return status
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   return (
@@ -201,26 +253,51 @@ const PartnerDashboard: React.FC = () => {
           </IonText>
         </div>
 
+        {isOffline && (
+          <div className="bg-amber-100 border border-amber-300 text-amber-800 px-4 py-2 mx-4 mb-4 rounded-md text-sm flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <IonIcon icon={alertCircleOutline} />
+              <span>Offline Mode. Changes will sync when reconnected.</span>
+            </div>
+          </div>
+        )}
+
         {/* Task Statistics Overview */}
         <IonCard className="ion-margin-horizontal ion-margin-bottom">
           <IonCardContent>
             <IonGrid>
               <IonRow>
-                <IonCol size="3" className="ion-text-center">
-                   <IonText color="dark"><h1>{stats.total}</h1></IonText>
-                   <IonText color="medium"><p className="ion-no-margin" style={{ fontSize: '0.75rem' }}>Total</p></IonText>
+                <IonCol 
+                  size="3" 
+                  className={`ion-text-center rounded-lg cursor-pointer ${activeFilter === 'pending' ? 'bg-warning/10 border border-warning/30' : ''}`} 
+                  onClick={() => setActiveFilter('pending')}
+                >
+                   <IonText color="warning"><h1>{stats.pending}</h1></IonText>
+                   <IonText color="medium"><p className="ion-no-margin" style={{ fontSize: '0.75rem' }}>Pending</p></IonText>
                 </IonCol>
-                <IonCol size="3" className="ion-text-center">
-                   <IonText color="success"><h1>{stats.completed}</h1></IonText>
-                   <IonText color="medium"><p className="ion-no-margin" style={{ fontSize: '0.75rem' }}>Done</p></IonText>
-                </IonCol>
-                <IonCol size="3" className="ion-text-center">
+                <IonCol 
+                  size="3" 
+                  className={`ion-text-center rounded-lg cursor-pointer ${activeFilter === 'inProgress' ? 'bg-primary/10 border border-primary/30' : ''}`} 
+                  onClick={() => setActiveFilter('inProgress')}
+                >
                    <IonText color="primary"><h1>{stats.inProgress}</h1></IonText>
                    <IonText color="medium"><p className="ion-no-margin" style={{ fontSize: '0.75rem' }}>Active</p></IonText>
                 </IonCol>
-                <IonCol size="3" className="ion-text-center">
-                   <IonText color="warning"><h1>{stats.pending}</h1></IonText>
-                   <IonText color="medium"><p className="ion-no-margin" style={{ fontSize: '0.75rem' }}>Pending</p></IonText>
+                <IonCol 
+                  size="3" 
+                  className={`ion-text-center rounded-lg cursor-pointer ${activeFilter === 'completed' ? 'bg-success/10 border border-success/30' : ''}`} 
+                  onClick={() => setActiveFilter('completed')}
+                >
+                   <IonText color="success"><h1>{stats.completed}</h1></IonText>
+                   <IonText color="medium"><p className="ion-no-margin" style={{ fontSize: '0.75rem' }}>Done</p></IonText>
+                </IonCol>
+                <IonCol 
+                  size="3" 
+                  className={`ion-text-center rounded-lg cursor-pointer ${activeFilter === 'total' ? 'bg-medium/10 border border-medium/30' : ''}`} 
+                  onClick={() => setActiveFilter('total')}
+                >
+                   <IonText color="dark"><h1>{stats.total}</h1></IonText>
+                   <IonText color="medium"><p className="ion-no-margin" style={{ fontSize: '0.75rem' }}>Total</p></IonText>
                 </IonCol>
               </IonRow>
             </IonGrid>
@@ -243,20 +320,26 @@ const PartnerDashboard: React.FC = () => {
                 <IonText color="medium"><p>Check back later for new tasks.</p></IonText>
               </IonCardContent>
             </IonCard>
+          ) : filteredAssignments.length === 0 ? (
+            <div className="ion-text-center ion-padding"><IonNote>No {activeFilter === 'inProgress' ? 'active' : activeFilter} tasks</IonNote></div>
           ) : (
             <div className="space-y-4">
-              {assignments.map((assignment) => (
+              {filteredAssignments.map((assignment) => (
                 <IonCard key={assignment.id} className="ion-no-margin ion-margin-bottom">
-                  <IonCardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <IonCardSubtitle color="primary">{assignment.planName || 'Wash Service'}</IonCardSubtitle>
-                        <IonCardTitle>{assignment.customerName || 'Customer'}</IonCardTitle>
+                  <IonCardHeader className="ion-padding-top ion-padding-horizontal">
+                    <div className="flex justify-between items-start w-full gap-2">
+                      <div className="flex-1">
+                        <IonText color="medium">
+                          <h3 className="ion-no-margin" style={{ fontSize: '0.9rem' }}>{assignment.planName || 'Wash Service'}</h3>
+                        </IonText>
+                        <IonCardTitle className="ion-margin-top" style={{ fontSize: '1.25rem' }}>{assignment.customerName || 'Customer'}</IonCardTitle>
                       </div>
-                      <IonBadge color={getStatusBadgeColor(assignment.status)} className="flex items-center gap-1">
-                        <IonIcon icon={getStatusIcon(assignment.status)} />
-                        {formatStatus(assignment.status)}
-                      </IonBadge>
+                      <div className="flex-shrink-0">
+                        <IonBadge color={getStatusBadgeColor(assignment.status)} className="ion-padding-horizontal py-1 flex items-center gap-1">
+                          <IonIcon icon={getStatusIcon(assignment.status)} />
+                          {formatStatus(assignment.status)}
+                        </IonBadge>
+                      </div>
                     </div>
                   </IonCardHeader>
                   

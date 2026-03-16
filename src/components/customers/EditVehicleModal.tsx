@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   IonModal, 
   IonHeader, 
@@ -14,16 +14,17 @@ import {
   IonSelect,
   IonSelectOption
 } from '@ionic/react';
-import { addVehicle, type AddVehicleRequest } from '../../services/vehicleService';
+import { updateVehicle, type AddVehicleRequest } from '../../services/vehicleService';
+import type { Vehicle } from '../../services/customerService';
 
-interface AddVehicleModalProps {
+interface EditVehicleModalProps {
   isOpen: boolean;
-  customerId: string;
+  vehicle: Vehicle | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, customerId, onClose, onSuccess }) => {
+const EditVehicleModal: React.FC<EditVehicleModalProps> = ({ isOpen, vehicle, onClose, onSuccess }) => {
   const [formData, setFormData] = useState<AddVehicleRequest>({
     make: '',
     model: '',
@@ -36,7 +37,21 @@ const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, customerId, o
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (key: keyof AddVehicleRequest, value: any) => {
+  useEffect(() => {
+    if (vehicle) {
+      setFormData({
+        make: vehicle.make || '',
+        model: vehicle.model || '',
+        year: vehicle.year || new Date().getFullYear(),
+        color: vehicle.color || '',
+        registrationNumber: vehicle.registrationNumber || '',
+        type: vehicle.type || 'sedan',
+        parkingLocation: vehicle.parkingLocation || ''
+      });
+    }
+  }, [vehicle]);
+
+  const handleChange = (key: keyof AddVehicleRequest, value: string | number) => {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
@@ -46,17 +61,20 @@ const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, customerId, o
       return;
     }
 
+    if (!vehicle) return;
+
     try {
       setLoading(true);
       setError(null);
-      await addVehicle(customerId, formData);
-      setFormData({
-        make: '', model: '', year: new Date().getFullYear(), color: '', registrationNumber: '', type: 'sedan', parkingLocation: ''
-      });
+      await updateVehicle(vehicle.id.toString(), formData);
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to add vehicle');
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to update vehicle');
+      }
     } finally {
       setLoading(false);
     }
@@ -66,7 +84,7 @@ const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, customerId, o
     <IonModal isOpen={isOpen} onDidDismiss={onClose}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle className="pl-4">Add Vehicle</IonTitle>
+          <IonTitle className="pl-4">Edit Vehicle</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={onClose}>Cancel</IonButton>
           </IonButtons>
@@ -150,7 +168,7 @@ const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, customerId, o
 
           <div className="mt-6 px-4">
             <IonButton expand="block" type="submit" disabled={loading}>
-              {loading ? 'Adding...' : 'Add Vehicle'}
+              {loading ? 'Saving...' : 'Save Changes'}
             </IonButton>
           </div>
         </form>
@@ -159,4 +177,4 @@ const AddVehicleModal: React.FC<AddVehicleModalProps> = ({ isOpen, customerId, o
   );
 };
 
-export default AddVehicleModal;
+export default EditVehicleModal;

@@ -82,11 +82,8 @@ const CleanerList: React.FC = () => {
 
           <div className="container mx-auto px-4 pt-6 space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <IonText><h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>Partner Management</h2></IonText>
-                <IonNote>View and manage your team of partners</IonNote>
-              </div>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
               <IonButton color="primary" onClick={() => setIsCreateModalOpen(true)}>
                 <IonIcon icon={addOutline} slot="start" />
                 Add Partner

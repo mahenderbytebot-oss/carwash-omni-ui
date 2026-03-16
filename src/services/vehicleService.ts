@@ -6,6 +6,7 @@
 
 import apiClient from './apiClient';
 import type { Vehicle } from './customerService';
+import { useAuthStore } from '../store/authStore';
 
 export interface AddVehicleRequest {
   make: string;
@@ -14,6 +15,7 @@ export interface AddVehicleRequest {
   color: string;
   registrationNumber: string;
   type: string; // sedan, suv, etc.
+  parkingLocation: string;
 }
 
 interface ApiWrapper<T> {
@@ -34,7 +36,7 @@ export const addVehicle = async (customerId: string, data: AddVehicleRequest): P
       color: data.color,
       year: data.year,
       customerId: parseInt(customerId, 10),
-      parkingLocation: 'Default', // Required by backend
+      parkingLocation: data.parkingLocation,
       specialInstructions: '',
       type: data.type
     };
@@ -43,6 +45,38 @@ export const addVehicle = async (customerId: string, data: AddVehicleRequest): P
     return response.data.body;
   } catch (error) {
     console.error('Error adding vehicle:', error);
+    throw error;
+  }
+};
+
+/**
+ * Updates an empty vehicle
+ */
+export const updateVehicle = async (vehicleId: string, data: AddVehicleRequest): Promise<Vehicle> => {
+  try {
+    // For update, we might not need all fields, but the request DTO likely requires them.
+    // We'll pass the full object as confirmed by the backend controller accepting VehicleRequest.
+    const payload = {
+      registrationNumber: data.registrationNumber,
+      model: data.model,
+      make: data.make,
+      color: data.color,
+      year: data.year,
+      customerId: 0, // Customer ID is set by backend from security context or ignored if not needed for update validation
+      parkingLocation: data.parkingLocation,
+      specialInstructions: '',
+      type: data.type
+    };
+    
+    const userRole = useAuthStore.getState().user?.role;
+    const endpoint = userRole === 'CUSTOMER' 
+      ? `/api/customer/vehicles/${vehicleId}` 
+      : `/api/vehicles/${vehicleId}`;
+
+    const response = await apiClient.put<ApiWrapper<Vehicle>>(endpoint, payload);
+    return response.data.body;
+  } catch (error) {
+    console.error('Error updating vehicle:', error);
     throw error;
   }
 };

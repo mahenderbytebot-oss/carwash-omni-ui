@@ -93,11 +93,8 @@ const CustomerList: React.FC = () => {
 
           <div className="container mx-auto px-4 pt-6 space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <IonText><h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>Customer Management</h2></IonText>
-                <IonNote>View and manage your customer base</IonNote>
-              </div>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
               <IonButton color="primary" onClick={() => setIsCreateModalOpen(true)}>
                 <IonIcon icon={addOutline} slot="start" />
                 Add Customer
@@ -155,7 +152,7 @@ const CustomerList: React.FC = () => {
                           )}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <IonBadge color="medium">
-                              {customer.vehicleCount !== undefined ? customer.vehicleCount : (customer.vehicles?.length || 0)} Vehicles
+                              {customer.vehicleCount !== undefined ? customer.vehicleCount : (customer.vehicles?.filter(v => v.active !== false).length || 0)} Vehicles
                             </IonBadge>
                             {customer.address && (
                                <IonNote style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>• {customer.address}</IonNote>

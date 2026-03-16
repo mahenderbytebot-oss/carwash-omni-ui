@@ -5,7 +5,7 @@ import {
   IonPage
 } from '@ionic/react';
 import { Route, Redirect } from 'react-router-dom';
-import { list, map, time } from 'ionicons/icons';
+import { list, time } from 'ionicons/icons';
 import CleanerDashboard from '../pages/cleaner/Dashboard';
 import AppMenu from '../components/ui/AppMenu';
 import CleanerHistory from '../pages/cleaner/History';
@@ -13,15 +13,18 @@ import CleanerHistory from '../pages/cleaner/History';
 const CleanerLayout: React.FC = () => {
 
   const appPages = [
-    { title: 'Tasks', url: '/cleaner/dashboard', icon: list },
-    { title: 'Map', url: '/cleaner/dashboard', icon: map },
+    { title: 'Dashboard', url: '/cleaner/dashboard', icon: list },
     { title: 'History', url: '/cleaner/history', icon: time },
   ];
 
   return (
     <IonPage>
       <IonSplitPane contentId="main">
-        <AppMenu pages={appPages} />
+        <AppMenu 
+            pages={appPages} 
+            isCollapsed={false} 
+            onToggleCollapse={() => {}} 
+        />
         <IonRouterOutlet id="main">
           <Route exact path="/cleaner/dashboard" component={CleanerDashboard} />
           <Route exact path="/cleaner/history" component={CleanerHistory} />

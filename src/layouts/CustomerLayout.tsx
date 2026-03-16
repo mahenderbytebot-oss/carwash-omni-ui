@@ -20,7 +20,11 @@ const CustomerLayout: React.FC = () => {
   return (
     <IonPage>
       <IonSplitPane contentId="main">
-        <AppMenu pages={appPages} />
+        <AppMenu 
+            pages={appPages} 
+            isCollapsed={false} 
+            onToggleCollapse={() => {}} 
+        />
         <IonRouterOutlet id="main">
           <Route exact path="/customer/dashboard" component={CustomerDashboard} />
           <Route exact path="/customer/vehicles" component={MyCars} />

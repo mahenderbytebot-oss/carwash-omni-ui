@@ -3,36 +3,32 @@ import apiClient from './apiClient';
 
 export interface WashRecord {
   id: number;
-  vehicle: {
-    id: number;
-    make: string;
-    model: string;
-    registrationNumber: string;
-  };
-  customer: {
-    id: number;
-    name: string;
-  };
-  cleaner?: {
-    id: number;
-    name: string;
-    mobile: string;
-  };
-  subscription?: {
-    id: number;
-    planName: string;
-  };
+  subscriptionId?: number;
   status: 'SCHEDULED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'VEHICLE_NOT_AVAILABLE' | 'SKIPPED' | 'MISSED' | 'VERIFIED';
   scheduledDateTime: string;
   startedAt?: string;
   completedAt?: string;
-  washLocationLat?: number;
-  washLocationLng?: number;
   beforePhotos?: string[];
   afterPhotos?: string[];
   notes?: string;
-  rating?: number;
-  review?: string;
+  
+  // Cleaner info
+  cleanerId?: number;
+  cleanerName?: string;
+  cleanerPhone?: string;
+
+  // Customer info
+  customerName?: string;
+  customerAddress?: string;
+  customerPhone?: string;
+
+  // Vehicle info
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehiclePlate?: string;
+
+  // Plan info
+  planName?: string;
 }
 
 interface Page<T> {
@@ -58,7 +54,7 @@ interface ApiWrapper<T> {
  */
 export const getMyWashes = async (filterType?: string, page = 0, size = 10): Promise<Page<WashRecord>> => {
   try {
-    const params: any = { page, size };
+    const params: Record<string, string | number> = { page, size };
     if (filterType) {
       params.filterType = filterType;
     }
@@ -79,6 +75,19 @@ export const getTodayWashes = async (): Promise<WashRecord[]> => {
     return response.data.body || [];
   } catch (error) {
     console.error('Error fetching today\'s washes:', error);
+    throw error;
+  }
+};
+
+/**
+ * Manually generate a wash task for today for a given subscription.
+ */
+export const generateWashTask = async (subscriptionId: number): Promise<WashRecord> => {
+  try {
+    const response = await apiClient.post<ApiWrapper<WashRecord>>(`/api/admin/washes/generate/${subscriptionId}`);
+    return response.data.body;
+  } catch (error) {
+    console.error('Error generating wash task:', error);
     throw error;
   }
 };

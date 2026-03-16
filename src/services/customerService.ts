@@ -27,6 +27,11 @@ export interface Vehicle {
   registrationNumber: string;
   customerId: string;
   subscriptions?: Subscription[];
+  parkingLocation?: string;
+  type?: string; 
+  status?: string;
+  active?: boolean;
+  specialInstructions?: string;
 }
 
 export interface Subscription {
@@ -40,6 +45,7 @@ export interface Subscription {
   price: number;
   customer?: Customer;
   vehicle?: Vehicle;
+  vehicleId?: number; // Flat vehicleId from SubscriptionResponse DTO
   scheduledDays?: string[]; // e.g. ["MONDAY", "WEDNESDAY"]
   cleanerId?: number;
   cleanerName?: string;
@@ -47,6 +53,27 @@ export interface Subscription {
   vehicleMake?: string;
   vehicleModel?: string;
   vehiclePlate?: string;
+  customerPhone?: string;
+  effectivePrice?: number;
+  discount?: number;
+  paymentStatus?: string;
+  paymentMode?: string;
+  onlinePaymentType?: string;
+  paymentReference?: string;
+  paymentDate?: string;
+  daysToExpiry?: number;
+  payments?: SubscriptionPayment[];
+}
+
+export interface SubscriptionPayment {
+  id: number;
+  paymentDate: string;
+  amount: number;
+  status: string;
+  mode: string;
+  onlineType: string;
+  reference: string;
+  type: string;
 }
 
 export interface Payment {
